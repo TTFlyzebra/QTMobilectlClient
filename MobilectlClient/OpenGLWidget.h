@@ -1,5 +1,4 @@
 #pragma once
-#include <QtWidgets/QMainWindow>
 #include "ui_OpenGLWidget.h"
 
 #include <QOpenGLWidget>
@@ -7,7 +6,8 @@
 #include <QOpenGLFunctions_3_3_Core>
 #include <QOpenGLShader>
 #include <QOpenGLShaderProgram>
-
+#include <QOpenGLBuffer>
+#include <QOpenGLTexture>
 #include <QMouseEvent>
 
 class OpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_Core
@@ -28,5 +28,14 @@ protected:
     void mousePressEvent(QMouseEvent* event);
     void mouseMoveEvent(QMouseEvent* event);
     void mouseReleaseEvent(QMouseEvent* event);
+
+
+private:
+    QOpenGLShaderProgram* mShaderProgram;
+    QOpenGLBuffer mBuffer;
+    QOpenGLTexture* textureY = nullptr, * textureU = nullptr, * textureV = nullptr;
+    GLuint textureUniformY, textureUniformU, textureUniformV;
+    GLuint idY, idU, idV;
+    uchar* yuvPtr = nullptr;
 };
 
