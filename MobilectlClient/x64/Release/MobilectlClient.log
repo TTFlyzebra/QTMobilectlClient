@@ -1,5 +1,0 @@
-﻿  uic OpenGLWidget.ui
-  OpenGLWidget.cpp
-  main.cpp
-  moc_OpenGLWidget.cpp
-  MobilectlClient.vcxproj -> D:\VCPRO\MobilectlClient\x64\Release\MobilectlClient.exe
