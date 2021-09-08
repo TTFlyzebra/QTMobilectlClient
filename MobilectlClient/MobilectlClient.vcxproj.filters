@@ -65,9 +65,12 @@
     <QtMoc Include="LoginDialog.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="FlyPlayer.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="FlyPlayer.h">
+    <ClInclude Include="main.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

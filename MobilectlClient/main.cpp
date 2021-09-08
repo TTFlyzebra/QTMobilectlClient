@@ -1,4 +1,4 @@
-#include <QtWidgets/QApplication>
+#include <QApplication>
 
 #include "MobilectlClient.h"
 #include "OpenGLWidget.h"
@@ -7,10 +7,11 @@
 
 int main(int argc, char *argv[])
 {
-    QApplication a(argc, argv);
+    QApplication a(argc, argv);     
     OpenGLWidget gl;
-    //FlyPlayer flyPlay("D:\\temp\\tttt.mp4");
-    FlyPlayer flyPlay("rtsp://192.168.137.11/live");
+    FlyPlayer flyPlay("D:\\Video\\test.mp4");
+    QObject::connect(&flyPlay,SIGNAL(yuv_signal(uchar*, int32_t)),&gl,SLOT(updateYuv(uchar*, int32_t)),Qt::BlockingQueuedConnection);
+    //FlyPlayer flyPlay("rtsp://192.168.137.11/live");
     //LoginDialog dlg;
     //dlg.setWindowTitle(QString::fromLocal8Bit("µÇÂ½"));
     //dlg.show();

@@ -121,7 +121,8 @@
     <QtMoc Include="OpenGLWidget.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="FlyPlayer.h" />
+    <QtMoc Include="FlyPlayer.h" />
+    <ClInclude Include="main.h" />
     <QtMoc Include="LoginDialog.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -18,6 +18,9 @@ public:
     OpenGLWidget(QWidget* parent = Q_NULLPTR);
     ~OpenGLWidget();
 
+public slots:
+    void updateYuv(uchar* data, int32_t size);
+
 protected:
     virtual void initializeGL();
     virtual void resizeGL(int width, int height);

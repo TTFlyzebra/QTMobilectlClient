@@ -195,14 +195,15 @@ void FlyPlayer::run()
                     );
                     v_frame->width = frame->width;
                     v_frame->height = frame->height;
-                    auto* video_buf = (uchar*)malloc((v_frame->width * v_frame->height * 3 / 2) * sizeof(uchar));
-                    int start = 0;
+                    int32_t size = v_frame->width * v_frame->height * 3 / 2;
+                    uchar* video_buf = (uchar*)malloc((size) * sizeof(uchar));
+                    int32_t start = 0;
                     memcpy(video_buf, v_frame->data[0], v_frame->width * v_frame->height);
                     start = start + v_frame->width * v_frame->height;
                     memcpy(video_buf + start, v_frame->data[1], v_frame->width * v_frame->height / 4);
                     start = start + v_frame->width * v_frame->height / 4;
                     memcpy(video_buf + start, v_frame->data[2], v_frame->width * v_frame->height / 4);
-                    qDebug("Video-yuv data [%d]", v_frame->width* v_frame->height * 3 / 2);
+                    emit yuv_signal(video_buf, size);
                     free(video_buf);                    
                 }
             }
@@ -225,8 +226,8 @@ void FlyPlayer::run()
                         (const uint8_t**)frame->data,
                         frame->nb_samples);
                     if (retLen > 0) {
-                        //callBack->javaOnAudioDecode(audio_buf, retLen * 4);
-                        qDebug("Audio-pcm data [%d]", retLen*4);
+                        emit pcm_signal(audio_buf, retLen * 4);
+                        //qDebug("Audio-pcm data [%d]", retLen*4);
                     }
                     else {
                         qDebug("frame->linesize[0]=%d, frame->nb_samples=%d,retLen=%d, delay=%lld,out_count=%lld", frame->linesize[0], frame->nb_samples, retLen, delay, out_count);

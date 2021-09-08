@@ -108,8 +108,6 @@ void OpenGLWidget::resizeGL(int width, int height)
 
 void OpenGLWidget::paintGL()
 {
-    qDebug() << __func__;
-
     glActiveTexture(GL_TEXTURE0);  //激活纹理单元GL_TEXTURE0,系统里面的
     glBindTexture(GL_TEXTURE_2D, idY); //绑定y分量纹理对象id到激活的纹理单元
     //使用内存中的数据创建真正的y分量纹理数据
@@ -147,11 +145,15 @@ void OpenGLWidget::paintGL()
 
 }
 
+void OpenGLWidget::updateYuv(uchar* data, int32_t size)
+{
+    memcpy(yuvPtr, data, size);
+    update();
+}
+
 void OpenGLWidget::mousePressEvent(QMouseEvent* event)
 {
     qDebug() << event << "----" << event->pos();
-
-    update();
 }
 
 void OpenGLWidget::mouseMoveEvent(QMouseEvent* event)

@@ -10,6 +10,7 @@ extern "C" {
 
 class FlyPlayer:public QThread
 {
+    Q_OBJECT
 public:
     FlyPlayer(char *video_url);
     ~FlyPlayer();
@@ -18,6 +19,10 @@ public:
 
 protected:
     virtual void run();
+
+signals:
+    void yuv_signal(uchar* data, int32_t size);
+    void pcm_signal(uchar* data, int32_t size);
 
 private:
     volatile bool is_stop;
@@ -32,8 +37,8 @@ private:
     AVFrame* v_frame = nullptr;
     struct SwsContext* sws_ctx;
     uint8_t* audio_buf = nullptr;
-    uint16_t out_sampleRateInHz;
-    uint16_t out_channelConfig;
-    uint16_t out_audioFormat;
+    int32_t out_sampleRateInHz;
+    int32_t out_channelConfig;
+    int32_t out_audioFormat;
 };
 
