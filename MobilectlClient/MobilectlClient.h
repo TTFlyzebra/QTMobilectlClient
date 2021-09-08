@@ -10,6 +10,11 @@ class MobilectlClient : public QMainWindow
 public:
     MobilectlClient(QWidget *parent = Q_NULLPTR);
 
+
+public slots:
+    void on_login_accept_clicked();
+    void on_login_cancel_clicked();
+
 private:
     Ui::MobilectlClientClass ui;
 };

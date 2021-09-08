@@ -3,22 +3,20 @@
 
 #include <QOpenGLWidget>
 #include <QOpenGLExtraFunctions>
-#include <QOpenGLFunctions_3_3_Core>
+#include <QOpenGLFunctions>
 #include <QOpenGLShader>
 #include <QOpenGLShaderProgram>
 #include <QOpenGLBuffer>
 #include <QOpenGLTexture>
 #include <QMouseEvent>
 
-class OpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_Core
+class OpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions
 {
     Q_OBJECT
 
 public:
     OpenGLWidget(QWidget* parent = Q_NULLPTR);
-
-private:
-    Ui::OpenGLWidget ui;
+    ~OpenGLWidget();
 
 protected:
     virtual void initializeGL();
@@ -31,11 +29,14 @@ protected:
 
 
 private:
-    QOpenGLShaderProgram* mShaderProgram;
-    QOpenGLBuffer mBuffer;
-    QOpenGLTexture* textureY = nullptr, * textureU = nullptr, * textureV = nullptr;
+    Ui::OpenGLWidget ui;
+
+    QOpenGLShaderProgram* mGLShaderProgram;
+    QOpenGLBuffer mGLBuffer;
+    QOpenGLTexture* mGLTextureY = nullptr, * mGLTextureU = nullptr, * mGLTextureV = nullptr;
     GLuint textureUniformY, textureUniformU, textureUniformV;
     GLuint idY, idU, idV;
     uchar* yuvPtr = nullptr;
+    int32_t videoW, videoH;
 };
 
