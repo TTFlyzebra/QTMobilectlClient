@@ -8,9 +8,10 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);     
-    OpenGLWidget gl;
+    OpenGLWidget glView;
     FlyPlayer flyPlay("D:\\Video\\test.mp4");
-    QObject::connect(&flyPlay,SIGNAL(yuv_signal(uchar*, int32_t)),&gl,SLOT(updateYuv(uchar*, int32_t)),Qt::BlockingQueuedConnection);
+    QObject::connect(&flyPlay, SIGNAL(yuv_signal(uchar*, int32_t)), &glView, SLOT(upYuvDate(uchar*, int32_t)), Qt::BlockingQueuedConnection);
+    QObject::connect(&flyPlay, SIGNAL(pcm_signal(uchar*, int32_t)), &glView, SLOT(upPcmDate(uchar*, int32_t)), Qt::BlockingQueuedConnection);
     //FlyPlayer flyPlay("rtsp://192.168.137.11/live");
     //LoginDialog dlg;
     //dlg.setWindowTitle(QString::fromLocal8Bit("µÇÂ½"));
@@ -19,7 +20,10 @@ int main(int argc, char *argv[])
     //    gl.show();
     //    a.exec();
     //}
-    gl.show();
+    glView.show();
     flyPlay.start();
-    return a.exec();
+    int32_t result = a.exec();
+    flyPlay.stop();
+    flyPlay.wait();    
+    return result;
 }

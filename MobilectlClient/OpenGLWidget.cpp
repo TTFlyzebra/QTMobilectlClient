@@ -39,12 +39,22 @@ OpenGLWidget::OpenGLWidget(QWidget* parent)
     memset(yuvPtr, 0x1D, 720 * 1280);
     memset(yuvPtr+720*1280, 0x9D, 720 * 1280  / 4);
     memset(yuvPtr+720*1280*5/4, 0x68, 720 * 1280 / 4);
+
+    fmt.setSampleRate(44100);  //设定播放采样频率为44100Hz的音频文件
+    fmt.setSampleSize(16);     //设定播放采样格式（采样位数）为16位(bit)的音频文件。QAudioFormat支持的有8/16bit，即将声音振幅化为256/64k个等级
+    fmt.setChannelCount(2);    //设定播放声道数目为2通道（立体声）的音频文件。mono(平声道)的声道数目是1，stero(立体声)的声道数目是2
+    fmt.setCodec("audio/pcm"); //播放PCM数据（裸流）得设置编码器为"audio/pcm"。"audio/pcm"在所有的平台都支持，也就相当于音频格式的WAV,以线性方式无压缩的记录捕捉到的数据。如想使用其他编码格式 ，可以通过QAudioDeviceInfo::supportedCodecs()来获取当前平台支持的编码格式
+    fmt.setByteOrder(QAudioFormat::LittleEndian); //设定字节序，以小端模式播放音频文件
+    fmt.setSampleType(QAudioFormat::UnSignedInt); //设定采样类型。根据采样位数来设定。采样位数为8或16位则设置为QAudioFormat::UnSignedInt
+    out = new QAudioOutput(fmt);    //创建QAudioOutput对象并初始化
+    io = out->start(); //调用start函数后，返回QIODevice对象的地址
 }
 
 OpenGLWidget::~OpenGLWidget()
 {
     qDebug() << __func__;
-    free(yuvPtr);
+    if(yuvPtr) free(yuvPtr);
+    if (out) delete out;
 }
 
 void OpenGLWidget::initializeGL()
@@ -145,10 +155,15 @@ void OpenGLWidget::paintGL()
 
 }
 
-void OpenGLWidget::updateYuv(uchar* data, int32_t size)
+void OpenGLWidget::upYuvDate(uchar* data, int32_t size)
 {
     memcpy(yuvPtr, data, size);
     update();
+}
+
+void OpenGLWidget::upPcmDate(uchar* data, int32_t size)
+{
+    io->write((const char*)data, size);
 }
 
 void OpenGLWidget::mousePressEvent(QMouseEvent* event)

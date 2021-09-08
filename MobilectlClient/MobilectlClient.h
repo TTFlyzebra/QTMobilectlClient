@@ -9,6 +9,7 @@ class MobilectlClient : public QMainWindow
 
 public:
     MobilectlClient(QWidget *parent = Q_NULLPTR);
+    ~MobilectlClient();
 
 
 public slots:

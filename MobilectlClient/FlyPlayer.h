@@ -14,7 +14,7 @@ class FlyPlayer:public QThread
 public:
     FlyPlayer(char *video_url);
     ~FlyPlayer();
-    void close();
+    void stop();
     static int interrupt_cb(void* ctx);
 
 protected:
@@ -22,6 +22,7 @@ protected:
 
 signals:
     void yuv_signal(uchar* data, int32_t size);
+signals:
     void pcm_signal(uchar* data, int32_t size);
 
 private:

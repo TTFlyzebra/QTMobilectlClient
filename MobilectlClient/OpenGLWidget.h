@@ -9,6 +9,8 @@
 #include <QOpenGLBuffer>
 #include <QOpenGLTexture>
 #include <QMouseEvent>
+#include <QAudioFormat>
+#include <QAudioOutput>
 
 class OpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions
 {
@@ -19,7 +21,9 @@ public:
     ~OpenGLWidget();
 
 public slots:
-    void updateYuv(uchar* data, int32_t size);
+    void upYuvDate(uchar* data, int32_t size);
+public slots:
+    void upPcmDate(uchar* data, int32_t size);
 
 protected:
     virtual void initializeGL();
@@ -41,5 +45,10 @@ private:
     GLuint idY, idU, idV;
     uchar* yuvPtr = nullptr;
     int32_t videoW, videoH;
+
+
+    QAudioFormat fmt;
+    QAudioOutput* out;
+    QIODevice* io;
 };
 

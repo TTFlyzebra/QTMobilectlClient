@@ -7,6 +7,10 @@ MobilectlClient::MobilectlClient(QWidget *parent)
     ui.setupUi(this);
 }
 
+MobilectlClient::~MobilectlClient()
+{
+}
+
 void MobilectlClient::on_login_accept_clicked()
 {
     qDebug() << "on_login_accept_clicked:"<< ui.text_client_ip->text();

@@ -20,16 +20,16 @@ FlyPlayer::~FlyPlayer()
 }
 
 int FlyPlayer::interrupt_cb(void* ctx)
-{
+{   
     FlyPlayer* p = (FlyPlayer*)ctx;
     if (p->is_stop) {
-        qDebug()<<"FlyFFmpeg interrupt_cb, will exit! ";
+        qDebug()<<"FlyPlayer interrupt_cb, will exit! ";
         return 1;
     }
     return 0;
 }
 
-void FlyPlayer::close()
+void FlyPlayer::stop()
 {
     is_stop = true;
 }
@@ -41,8 +41,8 @@ void FlyPlayer::run()
     av_register_all();
     avformat_network_init();
     pFormatCtx = avformat_alloc_context();
-    //pFormatCtx->interrupt_callback.callback = interrupt_cb;
-    //pFormatCtx->interrupt_callback.opaque = pFormatCtx;
+    pFormatCtx->interrupt_callback.callback = interrupt_cb;
+    pFormatCtx->interrupt_callback.opaque = (FlyPlayer*)this;
 
     AVDictionary* avdic = NULL;
     av_dict_set(&avdic, "rtsp_transport", "tcp", 0);
