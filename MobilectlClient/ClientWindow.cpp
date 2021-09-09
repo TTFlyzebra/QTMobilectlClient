@@ -146,7 +146,7 @@ void ClientWindow::closeEvent(QCloseEvent* event)
 void ClientWindow::mousePressEvent(QMouseEvent* event)
 {
 	//qDebug() << event << "----" << event->pos();
-	if (event->button() == Qt::LeftButton){
+	if (event->button() == Qt::LeftButton) {
 		lastX = event->pos().x() * 1080 / mWidth;
 		lastY = event->pos().y() * 1920 / mHeigh;
 		leftDown[12] = lastX >> 8 & 0x000000FF;
@@ -154,12 +154,14 @@ void ClientWindow::mousePressEvent(QMouseEvent* event)
 		leftDown[16] = lastY >> 8 & 0x000000FF;
 		leftDown[17] = lastY & 0x000000FF;
 		mController->sendCommand(leftDown, sizeof(leftDown));
-	}else if (event->button() == Qt::RightButton){
+	}
+	else if (event->button() == Qt::RightButton) {
 		mController->sendCommand(key_back, sizeof(key_back));
-	}else if (event->button() == Qt::MidButton) {
+	}
+	else if (event->button() == Qt::MidButton) {
 		mController->sendCommand(key_home, sizeof(key_home));
 	}
-	
+
 }
 
 void ClientWindow::mouseMoveEvent(QMouseEvent* event)
@@ -173,7 +175,7 @@ void ClientWindow::mouseMoveEvent(QMouseEvent* event)
 		leftMove[16] = y >> 8 & 0x000000FF;
 		leftMove[17] = y & 0x000000FF;
 		mController->sendCommand(leftMove, sizeof(leftMove));
-		if (x <= 1080 && y <= 1920) {
+		if (x >= 0 && x <= 1080 && y <= 1920 && y >= 0) {
 			lastX = x;
 			lastY = y;
 		}
@@ -186,7 +188,7 @@ void ClientWindow::mouseReleaseEvent(QMouseEvent* event)
 	if (event->button() == Qt::LeftButton) {
 		int32_t x = event->pos().x() * 1080 / mWidth;
 		int32_t y = event->pos().y() * 1920 / mHeigh;
-		if (x > 1080 || y > 1920) {
+		if (x < 0 || x > 1080 || y < 0 || y > 1920) {
 			x = lastX;
 			y = lastY;
 		}
