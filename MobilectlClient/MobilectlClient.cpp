@@ -4,11 +4,13 @@
 MobilectlClient::MobilectlClient(QWidget *parent)
     : QMainWindow(parent)
 {
+    qDebug() << __func__;
     ui.setupUi(this);
 }
 
 MobilectlClient::~MobilectlClient()
 {
+    qDebug() << __func__;
 }
 
 void MobilectlClient::on_login_accept_clicked()

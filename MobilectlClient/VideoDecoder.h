@@ -8,12 +8,14 @@ extern "C" {
 #include <libswresample/swresample.h>
 }
 
-class FlyPlayer:public QThread
+class VideoDecoder:public QThread
 {
     Q_OBJECT
+
 public:
-    FlyPlayer(char *video_url);
-    ~FlyPlayer();
+    VideoDecoder();
+    ~VideoDecoder();
+    void play(char* video_url);
     void stop();
     static int interrupt_cb(void* ctx);
 
@@ -22,13 +24,14 @@ protected:
 
 signals:
     void yuv_signal(uchar* data, int32_t size);
+
 signals:
     void pcm_signal(uchar* data, int32_t size);
 
 private:
     volatile bool is_stop;
-    char* mVideo_url;
-
+    volatile bool is_running;
+    char* mVideo_url = nullptr;
     AVFormatContext* pFormatCtx = nullptr;
     AVCodecContext* pCodecCtx_video = nullptr;
     AVCodecContext* pCodecCtx_audio = nullptr;

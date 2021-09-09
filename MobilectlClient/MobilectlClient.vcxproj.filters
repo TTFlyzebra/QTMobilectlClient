@@ -40,10 +40,10 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="OpenGLWidget.cpp">
+    <ClCompile Include="ClientWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="FlyPlayer.cpp">
+    <ClCompile Include="VideoDecoder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="LoginDialog.cpp">
@@ -51,7 +51,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <QtUic Include="OpenGLWidget.ui">
+    <QtUic Include="ClientWindow.ui">
       <Filter>Form Files</Filter>
     </QtUic>
     <QtUic Include="LoginDialog.ui">
@@ -59,13 +59,13 @@
     </QtUic>
   </ItemGroup>
   <ItemGroup>
-    <QtMoc Include="OpenGLWidget.h">
+    <QtMoc Include="ClientWindow.h">
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="LoginDialog.h">
       <Filter>Header Files</Filter>
     </QtMoc>
-    <QtMoc Include="FlyPlayer.h">
+    <QtMoc Include="VideoDecoder.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

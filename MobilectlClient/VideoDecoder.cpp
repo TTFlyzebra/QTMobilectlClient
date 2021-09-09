@@ -1,4 +1,4 @@
-#include "FlyPlayer.h"
+#include "VideoDecoder.h"
 #include <QDebug>
 #include <QMutex>
 
@@ -6,22 +6,30 @@ extern "C" {
 #include "libavutil/imgutils.h"
 }
 
-FlyPlayer::FlyPlayer(char* video_url)
-    :mVideo_url(video_url)
-    , is_stop(false)
+VideoDecoder::VideoDecoder()
+    : is_stop(false)
+    , is_running(false)
     , out_sampleRateInHz(48000)
     , out_channelConfig(AV_CH_LAYOUT_STEREO)
     , out_audioFormat(AV_SAMPLE_FMT_S16)
 {
+    qDebug(__func__);
 }
 
-FlyPlayer::~FlyPlayer()
+VideoDecoder::~VideoDecoder()
 {
+    qDebug(__func__);
 }
 
-int FlyPlayer::interrupt_cb(void* ctx)
+void VideoDecoder::play(char* video_url)
+{
+    mVideo_url = video_url;
+    start();
+}
+
+int VideoDecoder::interrupt_cb(void* ctx)
 {   
-    FlyPlayer* p = (FlyPlayer*)ctx;
+    VideoDecoder* p = (VideoDecoder*)ctx;
     if (p->is_stop) {
         qDebug()<<"FlyPlayer interrupt_cb, will exit! ";
         return 1;
@@ -29,20 +37,17 @@ int FlyPlayer::interrupt_cb(void* ctx)
     return 0;
 }
 
-void FlyPlayer::stop()
+void VideoDecoder::run()
 {
-    is_stop = true;
-}
-
-void FlyPlayer::run()
-{
+    qDebug("VideoDecoder running...");
+    is_running = true;
     int videoStream = -1;
     int audioStream = -1;
     av_register_all();
     avformat_network_init();
     pFormatCtx = avformat_alloc_context();
     pFormatCtx->interrupt_callback.callback = interrupt_cb;
-    pFormatCtx->interrupt_callback.opaque = (FlyPlayer*)this;
+    pFormatCtx->interrupt_callback.opaque = (VideoDecoder*)this;
 
     AVDictionary* avdic = NULL;
     av_dict_set(&avdic, "rtsp_transport", "tcp", 0);
@@ -203,7 +208,7 @@ void FlyPlayer::run()
                     memcpy(video_buf + start, v_frame->data[1], v_frame->width * v_frame->height / 4);
                     start = start + v_frame->width * v_frame->height / 4;
                     memcpy(video_buf + start, v_frame->data[2], v_frame->width * v_frame->height / 4);
-                    emit yuv_signal(video_buf, size);
+                    if(!is_stop) emit yuv_signal(video_buf, size);
                     free(video_buf);                    
                 }
             }
@@ -226,8 +231,7 @@ void FlyPlayer::run()
                         (const uint8_t**)frame->data,
                         frame->nb_samples);
                     if (retLen > 0) {
-                        emit pcm_signal(audio_buf, retLen * 4);
-                        //qDebug("Audio-pcm data [%d]", retLen*4);
+                        if (!is_stop) emit pcm_signal(audio_buf, retLen * 4);
                     }
                     else {
                         qDebug("frame->linesize[0]=%d, frame->nb_samples=%d,retLen=%d, delay=%lld,out_count=%lld", frame->linesize[0], frame->nb_samples, retLen, delay, out_count);
@@ -274,5 +278,13 @@ void FlyPlayer::run()
         qDebug("avformat_close_input pFormatCtx.");
         avformat_close_input(&pFormatCtx);
     }
+    is_running = false;
+    qDebug("VideoDecoder exit...");
     return;
+}
+
+void VideoDecoder::stop()
+{
+    QObject::disconnect(this, 0, 0, 0);
+    is_stop = true;
 }

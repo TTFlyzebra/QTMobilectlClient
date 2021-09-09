@@ -106,22 +106,22 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="FlyPlayer.cpp" />
+    <ClCompile Include="VideoDecoder.cpp" />
     <ClCompile Include="LoginDialog.cpp" />
-    <ClCompile Include="OpenGLWidget.cpp" />
+    <ClCompile Include="ClientWindow.cpp" />
     <QtRcc Include="MobilectlClient.qrc" />
     <QtUic Include="LoginDialog.ui" />
     <QtUic Include="MobilectlClient.ui" />
     <QtMoc Include="MobilectlClient.h" />
     <ClCompile Include="MobilectlClient.cpp" />
     <ClCompile Include="main.cpp" />
-    <QtUic Include="OpenGLWidget.ui" />
+    <QtUic Include="ClientWindow.ui" />
   </ItemGroup>
   <ItemGroup>
-    <QtMoc Include="OpenGLWidget.h" />
+    <QtMoc Include="ClientWindow.h" />
   </ItemGroup>
   <ItemGroup>
-    <QtMoc Include="FlyPlayer.h" />
+    <QtMoc Include="VideoDecoder.h" />
     <ClInclude Include="main.h" />
     <QtMoc Include="LoginDialog.h" />
   </ItemGroup>

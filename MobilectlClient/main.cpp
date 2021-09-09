@@ -1,18 +1,20 @@
 #include <QApplication>
+#include <QDebug>
 
 #include "MobilectlClient.h"
-#include "OpenGLWidget.h"
+#include "ClientWindow.h"
 #include "LoginDialog.h"
-#include "FlyPlayer.h"
+#include "VideoDecoder.h"
 
 int main(int argc, char *argv[])
 {
+    qDebug("main start!");
     QApplication a(argc, argv);     
-    OpenGLWidget glView;
-    FlyPlayer flyPlay("D:\\Video\\test.mp4");
-    QObject::connect(&flyPlay, SIGNAL(yuv_signal(uchar*, int32_t)), &glView, SLOT(upYuvDate(uchar*, int32_t)), Qt::BlockingQueuedConnection);
-    QObject::connect(&flyPlay, SIGNAL(pcm_signal(uchar*, int32_t)), &glView, SLOT(upPcmDate(uchar*, int32_t)), Qt::BlockingQueuedConnection);
-    //FlyPlayer flyPlay("rtsp://192.168.137.11/live");
+    ClientWindow client;
+    //VideoDecoder vplay("D:\\Video\\test.mp4");
+    VideoDecoder vplayer;
+    QObject::connect(&vplayer, SIGNAL(yuv_signal(uchar*, int32_t)), &client, SLOT(upYuvDate(uchar*, int32_t)), Qt::BlockingQueuedConnection);
+    QObject::connect(&vplayer, SIGNAL(pcm_signal(uchar*, int32_t)), &client, SLOT(upPcmDate(uchar*, int32_t)), Qt::BlockingQueuedConnection);
     //LoginDialog dlg;
     //dlg.setWindowTitle(QString::fromLocal8Bit("µÇÂ½"));
     //dlg.show();
@@ -20,10 +22,14 @@ int main(int argc, char *argv[])
     //    gl.show();
     //    a.exec();
     //}
-    glView.show();
-    flyPlay.start();
+    client.show();
+    vplayer.play("rtsp://192.168.137.11/live");
     int32_t result = a.exec();
-    flyPlay.stop();
-    flyPlay.wait();    
+    QObject::disconnect(&vplayer, 0, 0, 0);
+    vplayer.stop(); 
+    vplayer.quit();
+    qDebug("wait vplayer exit!");   
+    vplayer.wait();
+    qDebug("main exit!");
     return result;
 }

@@ -1,34 +1,8 @@
-#include "OpenGLWidget.h"
-#define GET_GLSTR(x) #x
+#include <QThread>
+#include "ClientWindow.h"
 
-const char* vsrc = GET_GLSTR(
-    attribute vec4 vertexIn; 
-    attribute vec2 textureIn;
-    varying vec2 textureOut; 
-    void main(void)          
-    {                        
-        gl_Position = vertexIn; 
-        textureOut = textureIn;
-    }
-);
-const char* fsrc = GET_GLSTR(
-    varying vec2 textureOut;
-    uniform sampler2D tex_y;
-    uniform sampler2D tex_u;
-    uniform sampler2D tex_v;
-    void main(void) 
-    { 
-        vec3 yuv; 
-        vec3 rgb; 
-        yuv.x = texture2D(tex_y, textureOut).r; 
-        yuv.y = texture2D(tex_u, textureOut).r - 0.5; 
-        yuv.z = texture2D(tex_v, textureOut).r - 0.5; 
-        rgb = mat3(1, 1, 1, 0, -0.39465, 2.03211, 1.13983, -0.58060, 0) * yuv; 
-        gl_FragColor = vec4(rgb, 1); 
-    }
-);
 
-OpenGLWidget::OpenGLWidget(QWidget* parent)
+ClientWindow::ClientWindow(QWidget* parent)
     : QOpenGLWidget(parent)
     ,videoW(720)
     ,videoH(1280)
@@ -36,28 +10,29 @@ OpenGLWidget::OpenGLWidget(QWidget* parent)
     qDebug() << __func__;
     ui.setupUi(this);
     yuvPtr = (uchar*)malloc((720*1280*3/2) * sizeof(uchar));
+
     memset(yuvPtr, 0x1D, 720 * 1280);
     memset(yuvPtr+720*1280, 0x9D, 720 * 1280  / 4);
     memset(yuvPtr+720*1280*5/4, 0x68, 720 * 1280 / 4);
 
-    fmt.setSampleRate(44100);  //设定播放采样频率为44100Hz的音频文件
-    fmt.setSampleSize(16);     //设定播放采样格式（采样位数）为16位(bit)的音频文件。QAudioFormat支持的有8/16bit，即将声音振幅化为256/64k个等级
-    fmt.setChannelCount(2);    //设定播放声道数目为2通道（立体声）的音频文件。mono(平声道)的声道数目是1，stero(立体声)的声道数目是2
-    fmt.setCodec("audio/pcm"); //播放PCM数据（裸流）得设置编码器为"audio/pcm"。"audio/pcm"在所有的平台都支持，也就相当于音频格式的WAV,以线性方式无压缩的记录捕捉到的数据。如想使用其他编码格式 ，可以通过QAudioDeviceInfo::supportedCodecs()来获取当前平台支持的编码格式
-    fmt.setByteOrder(QAudioFormat::LittleEndian); //设定字节序，以小端模式播放音频文件
-    fmt.setSampleType(QAudioFormat::UnSignedInt); //设定采样类型。根据采样位数来设定。采样位数为8或16位则设置为QAudioFormat::UnSignedInt
-    out = new QAudioOutput(fmt);    //创建QAudioOutput对象并初始化
-    io = out->start(); //调用start函数后，返回QIODevice对象的地址
+    fmt.setSampleRate(48000);  
+    fmt.setSampleSize(16);     
+    fmt.setChannelCount(2);   
+    fmt.setCodec("audio/pcm"); 
+    fmt.setByteOrder(QAudioFormat::LittleEndian);
+    fmt.setSampleType(QAudioFormat::UnSignedInt); 
+    out = new QAudioOutput(fmt);   
+    io = out->start(); 
 }
 
-OpenGLWidget::~OpenGLWidget()
+ClientWindow::~ClientWindow()
 {
     qDebug() << __func__;
     if(yuvPtr) free(yuvPtr);
     if (out) delete out;
 }
 
-void OpenGLWidget::initializeGL()
+void ClientWindow::initializeGL()
 {
     qDebug() << __func__;
 
@@ -111,12 +86,12 @@ void OpenGLWidget::initializeGL()
 }
 
 
-void OpenGLWidget::resizeGL(int width, int height)
+void ClientWindow::resizeGL(int width, int height)
 {
     qDebug() <<__func__<< "width=" << width << ",height=" << height;
 }
 
-void OpenGLWidget::paintGL()
+void ClientWindow::paintGL()
 {
     glActiveTexture(GL_TEXTURE0);  //激活纹理单元GL_TEXTURE0,系统里面的
     glBindTexture(GL_TEXTURE_2D, idY); //绑定y分量纹理对象id到激活的纹理单元
@@ -155,28 +130,35 @@ void OpenGLWidget::paintGL()
 
 }
 
-void OpenGLWidget::upYuvDate(uchar* data, int32_t size)
+void ClientWindow::closeEvent(QCloseEvent* event)
+{
+    QObject::disconnect(0, 0, this, 0);
+    QThread::usleep(20000);
+}
+
+
+void ClientWindow::upYuvDate(uchar* data, int32_t size)
 {
     memcpy(yuvPtr, data, size);
     update();
 }
 
-void OpenGLWidget::upPcmDate(uchar* data, int32_t size)
+void ClientWindow::upPcmDate(uchar* data, int32_t size)
 {
     io->write((const char*)data, size);
 }
 
-void OpenGLWidget::mousePressEvent(QMouseEvent* event)
+void ClientWindow::mousePressEvent(QMouseEvent* event)
 {
     qDebug() << event << "----" << event->pos();
 }
 
-void OpenGLWidget::mouseMoveEvent(QMouseEvent* event)
+void ClientWindow::mouseMoveEvent(QMouseEvent* event)
 {
     qDebug() << event <<"----" << event->pos();
 }
 
-void OpenGLWidget::mouseReleaseEvent(QMouseEvent* event)
+void ClientWindow::mouseReleaseEvent(QMouseEvent* event)
 {
     qDebug() << event << "----" << event->pos();
 }
