@@ -8,14 +8,16 @@ extern "C" {
 #include <libswresample/swresample.h>
 }
 
+#include "ClientWindow.h"
+
 class VideoDecoder:public QThread
 {
     Q_OBJECT
 
 public:
-    VideoDecoder();
+    VideoDecoder(ClientWindow* window);
     ~VideoDecoder();
-    void play(char* video_url);
+    void play(char* ip_address);
     void stop();
     static int interrupt_cb(void* ctx);
 
@@ -23,15 +25,17 @@ protected:
     virtual void run();
 
 signals:
-    void yuv_signal(uchar* data, int32_t size);
+    void yuv_signal(uchar* data,int32_t width, int32_t height, int32_t size);
 
 signals:
     void pcm_signal(uchar* data, int32_t size);
 
 private:
+    ClientWindow* mWindow;
+
     volatile bool is_stop;
     volatile bool is_running;
-    char* mVideo_url = nullptr;
+    char mVideo_url[256];
     AVFormatContext* pFormatCtx = nullptr;
     AVCodecContext* pCodecCtx_video = nullptr;
     AVCodecContext* pCodecCtx_audio = nullptr;
@@ -43,6 +47,6 @@ private:
     uint8_t* audio_buf = nullptr;
     int32_t out_sampleRateInHz;
     int32_t out_channelConfig;
-    int32_t out_audioFormat;
+    int32_t out_audioFormat;   
 };
 

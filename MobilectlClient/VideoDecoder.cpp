@@ -6,8 +6,9 @@ extern "C" {
 #include "libavutil/imgutils.h"
 }
 
-VideoDecoder::VideoDecoder()
-    : is_stop(false)
+VideoDecoder::VideoDecoder(ClientWindow *window)
+    :mWindow(window)
+    , is_stop(false)
     , is_running(false)
     , out_sampleRateInHz(48000)
     , out_channelConfig(AV_CH_LAYOUT_STEREO)
@@ -21,9 +22,9 @@ VideoDecoder::~VideoDecoder()
     qDebug(__func__);
 }
 
-void VideoDecoder::play(char* video_url)
+void VideoDecoder::play(char* ip_address)
 {
-    mVideo_url = video_url;
+    sprintf(mVideo_url,"rtsp://%s/screen", ip_address);
     start();
 }
 
@@ -51,11 +52,11 @@ void VideoDecoder::run()
 
     AVDictionary* avdic = NULL;
     av_dict_set(&avdic, "rtsp_transport", "tcp", 0);
-    //av_dict_set(&avdic, "probesize", "2048", 0);
-    //av_dict_set(&avdic, "max_analyze_duration", "1000000", 0);
+    av_dict_set(&avdic, "probesize", "100*1024", 0);
+    av_dict_set(&avdic, "max_analyze_duration", "5 * AV_TIME_BASE", 0);
     qDebug("open file %s", mVideo_url);
     int ret = avformat_open_input(&pFormatCtx, mVideo_url, nullptr, &avdic);
-    //av_dict_free(&avdic);
+    av_dict_free(&avdic);
     if (ret != 0) {
         qDebug("Couldn't open file %s: (ret:%d)", mVideo_url, ret);
         return ;
@@ -208,7 +209,10 @@ void VideoDecoder::run()
                     memcpy(video_buf + start, v_frame->data[1], v_frame->width * v_frame->height / 4);
                     start = start + v_frame->width * v_frame->height / 4;
                     memcpy(video_buf + start, v_frame->data[2], v_frame->width * v_frame->height / 4);
-                    if(!is_stop) emit yuv_signal(video_buf, size);
+                    //qDebug("yuv_signal size[%d] Start", size);
+                    //if(!is_stop) emit yuv_signal(video_buf, v_frame->width, v_frame->height, size);
+                    if (!is_stop) mWindow->upYuvDate(video_buf, v_frame->width, v_frame->height, size);
+                    //qDebug("yuv_signal size[%d] End", size);
                     free(video_buf);                    
                 }
             }
@@ -229,53 +233,55 @@ void VideoDecoder::run()
                         &audio_buf,
                         out_count,
                         (const uint8_t**)frame->data,
-                        frame->nb_samples);
+                        frame->nb_samples);                    
                     if (retLen > 0) {
-                        if (!is_stop) emit pcm_signal(audio_buf, retLen * 4);
+                        //qDebug("pcm_signal size[%d] Start", retLen*4);
+                        //if (!is_stop) emit pcm_signal(audio_buf, retLen * 4);
+                        if (!is_stop) mWindow->upPcmDate(audio_buf, retLen * 4);
+                        //qDebug("pcm_signal size[%d] End", retLen * 4);
                     }
                     else {
                         qDebug("frame->linesize[0]=%d, frame->nb_samples=%d,retLen=%d, delay=%lld,out_count=%lld", frame->linesize[0], frame->nb_samples, retLen, delay, out_count);
                     }
-
                 }
             }
         }
         av_packet_unref(packet);
     }
     if (swr_ctx) {
-        qDebug("swr_free swr_cxt.");
+        //qDebug("swr_free swr_cxt.");
         swr_free(&swr_ctx);
     }
     if (sws_ctx) {
-        qDebug("swr_free swr_cxt.");
+        //qDebug("swr_free swr_cxt.");
         sws_freeContext(sws_ctx);
     }
     if (audio_buf) {
-        qDebug("av_free audio_buf.");
+        //qDebug("av_free audio_buf.");
         av_free(audio_buf);
     }
     if (packet) {
-        qDebug("av_free packet.");
+        //qDebug("av_free packet.");
         av_free(packet);
     }
     if (frame) {
-        qDebug("av_frame_free frame.");
+        //qDebug("av_frame_free frame.");
         av_frame_free(&frame);
     }
     if (v_frame) {
-        qDebug("av_frame_free v_frame.");
+        //qDebug("av_frame_free v_frame.");
         av_frame_free(&v_frame);
     }
     if (pCodecCtx_video) {
-        qDebug("avcodec_close pCodecCtx_video.");
+        //qDebug("avcodec_close pCodecCtx_video.");
         avcodec_close(pCodecCtx_video);
     }
     if (pCodecCtx_audio) {
-        qDebug("avcodec_close pCodecCtx_audio.");
+        //qDebug("avcodec_close pCodecCtx_audio.");
         avcodec_close(pCodecCtx_audio);
     }
     if (pFormatCtx) {
-        qDebug("avformat_close_input pFormatCtx.");
+        //qDebug("avformat_close_input pFormatCtx.");
         avformat_close_input(&pFormatCtx);
     }
     is_running = false;
@@ -285,6 +291,6 @@ void VideoDecoder::run()
 
 void VideoDecoder::stop()
 {
-    QObject::disconnect(this, 0, 0, 0);
     is_stop = true;
+    this->disconnect();
 }
