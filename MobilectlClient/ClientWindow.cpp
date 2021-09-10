@@ -116,22 +116,22 @@ void ClientWindow::initializeGL()
 	mGLShaderProgram->enableAttributeArray(1);
 	mGLShaderProgram->setAttributeBuffer(0, GL_FLOAT, 0, 2, 2 * sizeof(GLfloat));
 	mGLShaderProgram->setAttributeBuffer(1, GL_FLOAT, 8 * sizeof(GLfloat), 2, 2 * sizeof(GLfloat));
+
 	mUfY = mGLShaderProgram->uniformLocation("tex_y");
 	mUfU = mGLShaderProgram->uniformLocation("tex_u");
 	mUfV = mGLShaderProgram->uniformLocation("tex_v");
 
-	mGLTextureY = new QOpenGLTexture(QOpenGLTexture::Target2D);
-	mGLTextureU = new QOpenGLTexture(QOpenGLTexture::Target2D);
-	mGLTextureV = new QOpenGLTexture(QOpenGLTexture::Target2D);
-	mGLTextureY->create();
-	mGLTextureU->create();
-	mGLTextureV->create();
-	mIdY = mGLTextureY->textureId();
-	mIdU = mGLTextureU->textureId();
-	mIdV = mGLTextureV->textureId();
-	mGLTextureY->release();
-	mGLTextureU->release();
-	mGLTextureV->release();
+	for (int i = 0; i < sizeof(mTextureIds) / sizeof(mTextureIds[0]); i++) {
+		mTextures[i] = new QOpenGLTexture(QOpenGLTexture::Target2D);
+		mTextures[i]->create();
+		mTextureIds[i] = mTextures[i]->textureId();
+		mTextures[i]->release();
+		glBindTexture(GL_TEXTURE_2D, mTextureIds[i]);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	}
 
 	mGLBuffer.release();
 	glClearColor(0.0f, 0.3f, 0.7f, 1.0f);
@@ -147,37 +147,21 @@ void ClientWindow::resizeGL(int width, int height)
 
 void ClientWindow::paintGL()
 {
-	glActiveTexture(GL_TEXTURE0);  //激活纹理单元GL_TEXTURE0,系统里面的
-	glBindTexture(GL_TEXTURE_2D, mIdY); //绑定y分量纹理对象id到激活的纹理单元
-	//使用内存中的数据创建真正的y分量纹理数据
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, mTextureIds[0]);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, v_width, v_height, 0, GL_RED, GL_UNSIGNED_BYTE, yuvPtr);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glUniform1i(mUfY, 0);//指定y纹理要使用新值
+	glUniform1i(mUfY, 0);
 
-	glActiveTexture(GL_TEXTURE1); //激活纹理单元GL_TEXTURE1
-	glBindTexture(GL_TEXTURE_2D, mIdU);
-	//使用内存中的数据创建真正的u分量纹理数据
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, mTextureIds[1]);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, v_width >> 1, v_height >> 1, 0, GL_RED, GL_UNSIGNED_BYTE, yuvPtr + v_width * v_height);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glUniform1i(mUfU, 1);//指定u纹理要使用新值
+	glUniform1i(mUfU, 1);
 
-	glActiveTexture(GL_TEXTURE2); //激活纹理单元GL_TEXTURE2
-	glBindTexture(GL_TEXTURE_2D, mIdV);
-	//使用内存中的数据创建真正的v分量纹理数据
+	glActiveTexture(GL_TEXTURE2); 
+	glBindTexture(GL_TEXTURE_2D, mTextureIds[2]);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, v_width >> 1, v_height >> 1, 0, GL_RED, GL_UNSIGNED_BYTE, yuvPtr + v_width * v_height * 5 / 4);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glUniform1i(mUfV, 2);//指定v纹理要使用新值
+	glUniform1i(mUfV, 2);
 	 
-	//使用顶点数组方式绘制图形
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }
 

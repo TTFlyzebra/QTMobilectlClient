@@ -41,11 +41,11 @@ protected:
 private:
 	Ui::ClientWindow ui;
 
-	QOpenGLShaderProgram* mGLShaderProgram;
 	QOpenGLBuffer mGLBuffer;
-	QOpenGLTexture* mGLTextureY, * mGLTextureU, * mGLTextureV;
+	QOpenGLShaderProgram* mGLShaderProgram;
 	GLuint mUfY, mUfU, mUfV;
-	GLuint mIdY, mIdU, mIdV;
+	QOpenGLTexture* mTextures[3];
+	GLuint mTextureIds[3];
 
 	uchar* yuvPtr = nullptr;
 	int32_t v_width, v_height;
