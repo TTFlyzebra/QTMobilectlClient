@@ -12,7 +12,6 @@ Controller::~Controller()
 
 void Controller::connect(char* ip_address)
 {
-	qDebug(__func__);
 	sprintf(mIpstr, "%s", ip_address);
 	is_stop = false;
 	start();
@@ -32,25 +31,30 @@ void Controller::sendCommand(uchar* command, int32_t size)
 void Controller::run()
 {
 	mTcpSocket = new QTcpSocket();
-	mTcpSocket->connectToHost(mIpstr,mPort);
-	if (!mTcpSocket->waitForConnected(30000)){
-		qDebug("Controller connectToHost failed");
-		return;
-	}
-	QObject::connect(mTcpSocket, SIGNAL(readyRead()), this, SLOT(recvData()));
-	while (!is_stop) {
-		mLock.lock();
-		if (sendBuf.empty()) {
-			mTask.wait(&mLock);
+	while (!is_stop)
+	{	
+		mTcpSocket->disconnect();
+		mTcpSocket->abort();
+		mTcpSocket->connectToHost(mIpstr,mPort);
+		if (!mTcpSocket->waitForConnected(30000)){
+			qDebug("Controller connectToHost failed");
+			continue;
 		}
-		if (!sendBuf.empty()) {
-			const char* send = (const char*)&sendBuf[0];
-			int32_t sendLen = mTcpSocket->write(send, sendBuf.size());
-			mTcpSocket->flush();
-			//qDebug("Controller send size[%d], errno[%d]", sendLen, errno);
-			sendBuf.clear();
+		QObject::connect(mTcpSocket, SIGNAL(readyRead()), this, SLOT(recvData()));
+		while (!is_stop) {
+			mLock.lock();
+			if (sendBuf.empty()) {
+				mTask.wait(&mLock);
+			}
+			if (!sendBuf.empty()) {
+				const char* send = (const char*)&sendBuf[0];
+				int32_t sendLen = mTcpSocket->write(send, sendBuf.size());
+				mTcpSocket->flush();
+				//qDebug("Controller send size[%d], errno[%d]", sendLen, errno);
+				sendBuf.clear();
+			}
+			mLock.unlock();
 		}
-		mLock.unlock();
 	}
 }
 void Controller::recvData()

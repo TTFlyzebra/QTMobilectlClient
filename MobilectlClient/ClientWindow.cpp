@@ -2,14 +2,44 @@
 #include "ClientWindow.h"
 
 
-ClientWindow::ClientWindow(Controller* controller, QWidget* parent)
-	:mController(controller)
-	, QOpenGLWidget(parent)
-	, videoW(720)
-	, videoH(1280)
+#define GET_GLSTR(x) #x
+
+static const char* vsrc = GET_GLSTR(
+	attribute vec4 vertexIn;
+	attribute vec2 textureIn;
+	varying vec2 textureOut;
+	void main(void)
+	{
+		gl_Position = vertexIn;
+		textureOut = textureIn;
+	}
+);
+static const char* fsrc = GET_GLSTR(
+	varying vec2 textureOut;
+	uniform sampler2D tex_y;
+	uniform sampler2D tex_u;
+	uniform sampler2D tex_v;
+	void main(void)
+	{
+		vec3 yuv;
+		vec3 rgb;
+		yuv.x = texture2D(tex_y, textureOut).r;
+		yuv.y = texture2D(tex_u, textureOut).r - 0.5;
+		yuv.z = texture2D(tex_v, textureOut).r - 0.5;
+		rgb = mat3(1, 1, 1, 0, -0.39465, 2.03211, 1.13983, -0.58060, 0) * yuv;
+		gl_FragColor = vec4(rgb, 1);
+	}
+);
+
+
+ClientWindow::ClientWindow(QWidget* parent)
+	: QOpenGLWidget(parent)
+	, v_width(720)
+	, v_height(1280)
 {
 	qDebug() << __func__;
 	ui.setupUi(this);
+
 	yuvPtr = (uchar*)malloc((720 * 1280 * 3 / 2) * sizeof(uchar));
 
 	memset(yuvPtr, 0x1D, 720 * 1280);
@@ -28,10 +58,9 @@ ClientWindow::ClientWindow(Controller* controller, QWidget* parent)
 
 ClientWindow::~ClientWindow()
 {
-	qDebug() << __func__;
+	qDebug("ClientWindow %s", __func__);
 	if (yuvPtr) free(yuvPtr);
 	if (mGLShaderProgram) mGLShaderProgram->release();
-	if (mGLTextureY) mGLTextureY->release();
 	if (out) {
 		out->stop();
 		delete out;
@@ -39,23 +68,35 @@ ClientWindow::~ClientWindow()
 	io = nullptr;
 }
 
+void ClientWindow::setController(Controller* controller)
+{
+	mController = controller;
+}
+
 void ClientWindow::initializeGL()
 {
-	qDebug() << __func__;
+	qDebug("ClientWindow %s", __func__);
 	initializeOpenGLFunctions();
-	//glEnable(GL_DEPTH_TEST);    
+	//glEnable(GL_DEPTH_TEST);  
+
+	//QMatrix4x4 mat;
+	//mat.setToIdentity();
+	//QVector3D eye(10, 10, 10);
+	//QVector3D cen(0, 0, 0);
+	//QVector3D up(0, 1, 0);
+	//mat.lookAt(eye, cen, up);
 
 	static const GLfloat vertices[]{
 		//顶点坐标
-		-1.0f,-1.0f,
-		-1.0f,+1.0f,
-		+1.0f,+1.0f,
-		+1.0f,-1.0f,
+		-1.0f, -1.0f,
+		-1.0f, +1.0f,
+		+1.0f, +1.0f,
+		+1.0f, -1.0f,
 		//纹理坐标
-		0.0f,1.0f,
-		0.0f,0.0f,
-		1.0f,0.0f,
-		1.0f,1.0f,
+		+0.0f, +1.0f,
+		+0.0f, +0.0f,
+		+1.0f, +0.0f,
+		+1.0f, +1.0f,
 	};
 	mGLBuffer.create();
 	mGLBuffer.bind();
@@ -75,19 +116,24 @@ void ClientWindow::initializeGL()
 	mGLShaderProgram->enableAttributeArray(1);
 	mGLShaderProgram->setAttributeBuffer(0, GL_FLOAT, 0, 2, 2 * sizeof(GLfloat));
 	mGLShaderProgram->setAttributeBuffer(1, GL_FLOAT, 8 * sizeof(GLfloat), 2, 2 * sizeof(GLfloat));
-	textureUniformY = mGLShaderProgram->uniformLocation("tex_y");
-	textureUniformU = mGLShaderProgram->uniformLocation("tex_u");
-	textureUniformV = mGLShaderProgram->uniformLocation("tex_v");
+	mUfY = mGLShaderProgram->uniformLocation("tex_y");
+	mUfU = mGLShaderProgram->uniformLocation("tex_u");
+	mUfV = mGLShaderProgram->uniformLocation("tex_v");
+
 	mGLTextureY = new QOpenGLTexture(QOpenGLTexture::Target2D);
 	mGLTextureU = new QOpenGLTexture(QOpenGLTexture::Target2D);
 	mGLTextureV = new QOpenGLTexture(QOpenGLTexture::Target2D);
 	mGLTextureY->create();
 	mGLTextureU->create();
 	mGLTextureV->create();
-	idY = mGLTextureY->textureId();
-	idU = mGLTextureU->textureId();
-	idV = mGLTextureV->textureId();
+	mIdY = mGLTextureY->textureId();
+	mIdU = mGLTextureU->textureId();
+	mIdV = mGLTextureV->textureId();
+	mGLTextureY->release();
+	mGLTextureU->release();
+	mGLTextureV->release();
 
+	mGLBuffer.release();
 	glClearColor(0.0f, 0.3f, 0.7f, 1.0f);
 }
 
@@ -102,40 +148,37 @@ void ClientWindow::resizeGL(int width, int height)
 void ClientWindow::paintGL()
 {
 	glActiveTexture(GL_TEXTURE0);  //激活纹理单元GL_TEXTURE0,系统里面的
-	glBindTexture(GL_TEXTURE_2D, idY); //绑定y分量纹理对象id到激活的纹理单元
+	glBindTexture(GL_TEXTURE_2D, mIdY); //绑定y分量纹理对象id到激活的纹理单元
 	//使用内存中的数据创建真正的y分量纹理数据
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, videoW, videoH, 0, GL_RED, GL_UNSIGNED_BYTE, yuvPtr);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, v_width, v_height, 0, GL_RED, GL_UNSIGNED_BYTE, yuvPtr);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glUniform1i(mUfY, 0);//指定y纹理要使用新值
 
 	glActiveTexture(GL_TEXTURE1); //激活纹理单元GL_TEXTURE1
-	glBindTexture(GL_TEXTURE_2D, idU);
+	glBindTexture(GL_TEXTURE_2D, mIdU);
 	//使用内存中的数据创建真正的u分量纹理数据
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, videoW >> 1, videoH >> 1, 0, GL_RED, GL_UNSIGNED_BYTE, yuvPtr + videoW * videoH);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, v_width >> 1, v_height >> 1, 0, GL_RED, GL_UNSIGNED_BYTE, yuvPtr + v_width * v_height);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glUniform1i(mUfU, 1);//指定u纹理要使用新值
 
 	glActiveTexture(GL_TEXTURE2); //激活纹理单元GL_TEXTURE2
-	glBindTexture(GL_TEXTURE_2D, idV);
+	glBindTexture(GL_TEXTURE_2D, mIdV);
 	//使用内存中的数据创建真正的v分量纹理数据
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, videoW >> 1, videoH >> 1, 0, GL_RED, GL_UNSIGNED_BYTE, yuvPtr + videoW * videoH * 5 / 4);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, v_width >> 1, v_height >> 1, 0, GL_RED, GL_UNSIGNED_BYTE, yuvPtr + v_width * v_height * 5 / 4);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	//指定y纹理要使用新值
-	glUniform1i(textureUniformY, 0);
-	//指定u纹理要使用新值
-	glUniform1i(textureUniformU, 1);
-	//指定v纹理要使用新值
-	glUniform1i(textureUniformV, 2);
+	glUniform1i(mUfV, 2);//指定v纹理要使用新值
+	 
 	//使用顶点数组方式绘制图形
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-
 }
 
 void ClientWindow::closeEvent(QCloseEvent* event)

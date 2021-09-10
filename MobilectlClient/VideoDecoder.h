@@ -15,8 +15,9 @@ class VideoDecoder:public QThread
     Q_OBJECT
 
 public:
-    VideoDecoder(ClientWindow* window);
+    VideoDecoder();
     ~VideoDecoder();
+    void setClientWindow(ClientWindow* window);
     void play(char* ip_address);
     void stop();
     static int interrupt_cb(void* ctx);

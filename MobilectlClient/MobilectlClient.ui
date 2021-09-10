@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>640</width>
-    <height>360</height>
+    <width>450</width>
+    <height>857</height>
    </rect>
   </property>
   <property name="font">
@@ -22,71 +22,27 @@
    <property name="enabled">
     <bool>true</bool>
    </property>
-   <widget class="QPushButton" name="login_accept">
+   <widget class="ClientWindow" name="ZebraGLWidget">
     <property name="geometry">
      <rect>
-      <x>180</x>
-      <y>210</y>
-      <width>100</width>
-      <height>30</height>
+      <x>0</x>
+      <y>0</y>
+      <width>450</width>
+      <height>800</height>
      </rect>
-    </property>
-    <property name="text">
-     <string>确定</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="login_cancel">
-    <property name="geometry">
-     <rect>
-      <x>370</x>
-      <y>210</y>
-      <width>100</width>
-      <height>30</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>取消</string>
-    </property>
-   </widget>
-   <widget class="QLineEdit" name="text_client_ip">
-    <property name="geometry">
-     <rect>
-      <x>210</x>
-      <y>110</y>
-      <width>251</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <pointsize>12</pointsize>
-     </font>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignCenter</set>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label">
-    <property name="geometry">
-     <rect>
-      <x>170</x>
-      <y>120</y>
-      <width>41</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>地址：</string>
     </property>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>640</width>
-     <height>27</height>
+     <width>450</width>
+     <height>23</height>
     </rect>
    </property>
   </widget>
@@ -98,9 +54,20 @@
     <bool>false</bool>
    </attribute>
   </widget>
-  <widget class="QStatusBar" name="statusBar"/>
+  <widget class="QStatusBar" name="statusBar">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+  </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>ClientWindow</class>
+   <extends>QOpenGLWidget</extends>
+   <header>ClientWindow.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="MobilectlClient.qrc"/>
  </resources>

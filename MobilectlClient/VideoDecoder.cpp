@@ -6,9 +6,8 @@ extern "C" {
 #include "libavutil/imgutils.h"
 }
 
-VideoDecoder::VideoDecoder(ClientWindow *window)
-    :mWindow(window)
-    , is_stop(false)
+VideoDecoder::VideoDecoder()    
+    : is_stop(false)
     , is_running(false)
     , out_sampleRateInHz(48000)
     , out_channelConfig(AV_CH_LAYOUT_STEREO)
@@ -22,6 +21,11 @@ VideoDecoder::~VideoDecoder()
     qDebug(__func__);
 }
 
+void VideoDecoder::setClientWindow(ClientWindow* window)
+{
+    mWindow = window;
+}
+
 void VideoDecoder::play(char* ip_address)
 {
     sprintf(mVideo_url,"rtsp://%s/screen", ip_address);
@@ -32,7 +36,7 @@ int VideoDecoder::interrupt_cb(void* ctx)
 {   
     VideoDecoder* p = (VideoDecoder*)ctx;
     if (p->is_stop) {
-        qDebug()<<"FlyPlayer interrupt_cb, will exit! ";
+        qDebug()<<"VideoDecoder interrupt_cb, will exit! ";
         return 1;
     }
     return 0;

@@ -6,19 +6,25 @@ MobilectlClient::MobilectlClient(QWidget *parent)
 {
     qDebug() << __func__;
     ui.setupUi(this);
+    mCtrl = new Controller();
+    ui.ZebraGLWidget->setController(mCtrl);
+    mPlay = new VideoDecoder();
+    mPlay->setClientWindow(ui.ZebraGLWidget);
+
+    mCtrl->connect("192.168.137.11");
+    mPlay->play("192.168.137.11");
 }
 
 MobilectlClient::~MobilectlClient()
 {
     qDebug() << __func__;
-}
 
-void MobilectlClient::on_login_accept_clicked()
-{
-    qDebug() << "on_login_accept_clicked:"<< ui.text_client_ip->text();
-}
+    mPlay->stop();
+    mPlay->wait();
 
-void MobilectlClient::on_login_cancel_clicked()
-{
-    qDebug() << "on_login_cancel_clicked:" << ui.text_client_ip->text();
+    mCtrl->disconnect();
+    mCtrl->wait();
+
+    delete mCtrl;
+    delete mPlay;
 }

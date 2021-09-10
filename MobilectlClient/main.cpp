@@ -11,44 +11,53 @@ int main(int argc, char *argv[])
 {
     qDebug("main start!");
     QApplication a(argc, argv);  
+
+    /*
     //VideoDecoder vplay("D:\\Video\\test.mp4");
-    Controller ctrller;
-    ClientWindow client(&ctrller);
-    VideoDecoder vplayer(&client);
+    Controller mCtrl;
+
+    ClientWindow mWindow;
+    mWindow.setController(&mCtrl);
+
+    VideoDecoder mPlay;
+    mPlay.setClientWindow(&mWindow);
+
     //LoginDialog dlg;
     //dlg.setWindowTitle(QString::fromLocal8Bit("µÇÂ½"));
     //dlg.show();
     //if (dlg.exec()== QDialog::Accepted) {
     //    client.show();
-    //    vplayer.play("rtsp://192.168.137.11/live");
+    //    mPlay.play("rtsp://192.168.137.11/live");
     //    int32_t result = a.exec();
-    //    QObject::disconnect(&vplayer, 0, 0, 0);
-    //    vplayer.stop();
-    //    vplayer.quit();
-    //    qDebug("wait vplayer exit!");
-    //    vplayer.wait();
+    //    QObject::disconnect(&mPlay, 0, 0, 0);
+    //    mPlay.stop();
+    //    mPlay.quit();
+    //    qDebug("wait mPlay exit!");
+    //    mPlay.wait();
     //    qDebug("main exit!");
     //}
     //return 0;
 
-    ctrller.connect("192.168.137.11");
-    vplayer.play("192.168.137.11");
+    mCtrl.connect("192.168.137.11");
+    mPlay.play("192.168.137.11");
 
-    client.show();
+    mWindow.show();
 
-    //QObject::connect(&vplayer, SIGNAL(yuv_signal(uchar*, int32_t, int32_t, int32_t)), &client, SLOT(upYuvDate(uchar*, int32_t, int32_t, int32_t)), Qt::BlockingQueuedConnection);
-    //QObject::connect(&vplayer, SIGNAL(pcm_signal(uchar*, int32_t)), &client, SLOT(upPcmDate(uchar*, int32_t)), Qt::BlockingQueuedConnection);
+    //QObject::connect(&mPlay, SIGNAL(yuv_signal(uchar*, int32_t, int32_t, int32_t)), &client, SLOT(upYuvDate(uchar*, int32_t, int32_t, int32_t)), Qt::BlockingQueuedConnection);
+    //QObject::connect(&mPlay, SIGNAL(pcm_signal(uchar*, int32_t)), &client, SLOT(upPcmDate(uchar*, int32_t)), Qt::BlockingQueuedConnection);
 
     int32_t result = a.exec();
 
-    vplayer.stop(); 
-    vplayer.quit();
-    vplayer.wait();
+    mPlay.stop(); 
+    mPlay.wait();
 
-    ctrller.disconnect();
-    ctrller.quit();
-    ctrller.wait();
+    mCtrl.disconnect();
+    mCtrl.wait();
+    */
 
+    MobilectlClient m;
+    m.show();
+    int32_t result = a.exec();
     qDebug("main exit!");
     return result;
 }
