@@ -35,8 +35,8 @@ void Controller::run()
 	{	
 		mTcpSocket->disconnect();
 		mTcpSocket->abort();
-		mTcpSocket->connectToHost(mIpstr,mPort);
-		if (!mTcpSocket->waitForConnected(30000)){
+		mTcpSocket->connectToHost(mIpstr, mPort);
+		if (!mTcpSocket->waitForConnected(5000)){
 			qDebug("Controller connectToHost failed");
 			continue;
 		}

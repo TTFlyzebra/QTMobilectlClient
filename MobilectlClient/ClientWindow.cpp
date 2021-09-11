@@ -36,15 +36,13 @@ ClientWindow::ClientWindow(QWidget* parent)
 	: QOpenGLWidget(parent)
 	, v_width(720)
 	, v_height(1280)
+	, mWidth(450)
+	, mHeigh(800)
 {
 	qDebug() << __func__;
 	ui.setupUi(this);
 
-	yuvPtr = (uchar*)malloc((720 * 1280 * 3 / 2) * sizeof(uchar));
-
-	memset(yuvPtr, 0x1D, 720 * 1280);
-	memset(yuvPtr + 720 * 1280, 0x9D, 720 * 1280 / 4);
-	memset(yuvPtr + 720 * 1280 * 5 / 4, 0x68, 720 * 1280 / 4);
+	yuvPtr = (uchar*)malloc((v_width * v_height * 3 / 2) * sizeof(uchar));
 
 	fmt.setSampleRate(48000);
 	fmt.setSampleSize(16);
@@ -174,8 +172,8 @@ void ClientWindow::mousePressEvent(QMouseEvent* event)
 {
 	//qDebug() << event << "----" << event->pos();
 	if (event->button() == Qt::LeftButton) {
-		lastX = event->pos().x() * 1080 / mWidth;
-		lastY = event->pos().y() * 1920 / mHeigh;
+		lastX = event->pos().x() * v_width / mWidth;
+		lastY = event->pos().y() * v_height / mHeigh;
 		leftDown[12] = lastX >> 8 & 0x000000FF;
 		leftDown[13] = lastX & 0x000000FF;
 		leftDown[16] = lastY >> 8 & 0x000000FF;
@@ -195,8 +193,8 @@ void ClientWindow::mouseMoveEvent(QMouseEvent* event)
 {
 	//qDebug() << event << "----" << event->pos();
 	if (event->buttons() == Qt::LeftButton) {
-		int32_t x = event->pos().x() * 1080 / mWidth;
-		int32_t y = event->pos().y() * 1920 / mHeigh;
+		int32_t x = event->pos().x() * v_width / mWidth;
+		int32_t y = event->pos().y() * v_height / mHeigh;
 		leftMove[12] = x >> 8 & 0x000000FF;
 		leftMove[13] = x & 0x000000FF;
 		leftMove[16] = y >> 8 & 0x000000FF;
@@ -213,8 +211,8 @@ void ClientWindow::mouseReleaseEvent(QMouseEvent* event)
 {
 	//qDebug() << event << "----" << event->pos();
 	if (event->button() == Qt::LeftButton) {
-		int32_t x = event->pos().x() * 1080 / mWidth;
-		int32_t y = event->pos().y() * 1920 / mHeigh;
+		int32_t x = event->pos().x() * v_width / mWidth;
+		int32_t y = event->pos().y() * v_height / mHeigh;
 		if (x < 0 || x > 1080 || y < 0 || y > 1920) {
 			x = lastX;
 			y = lastY;
@@ -230,9 +228,17 @@ void ClientWindow::mouseReleaseEvent(QMouseEvent* event)
 //signal
 int32_t ClientWindow::upYuvDate(uchar* data, int32_t width, int32_t height, int32_t size)
 {
+	if (v_width!=width || v_height != height || sizeof(yuvPtr)!=size) {
+		v_width = width;
+		v_height = height;
+		free(yuvPtr);
+		yuvPtr = (uchar*)malloc(size * sizeof(uchar));
+	}
 	//qDebug(__func__);
-	memcpy(yuvPtr, data, size);
-	update();
+	if (yuvPtr) {
+		memcpy(yuvPtr, data, size);
+		update();
+	}	
 	//qDebug()<< __func__ <<" End";
 	return 0;
 }

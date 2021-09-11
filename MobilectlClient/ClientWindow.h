@@ -48,7 +48,8 @@ private:
 	GLuint mTextureIds[3];
 
 	uchar* yuvPtr = nullptr;
-	int32_t v_width, v_height;
+	volatile int32_t v_width;
+	volatile int32_t v_height;
 
 	QAudioFormat fmt;
 	QAudioOutput* out;
