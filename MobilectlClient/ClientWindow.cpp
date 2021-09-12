@@ -1,7 +1,6 @@
 #include <QThread>
 #include "ClientWindow.h"
 
-
 #define GET_GLSTR(x) #x
 
 static const char* vsrc = GET_GLSTR(
@@ -30,7 +29,6 @@ static const char* fsrc = GET_GLSTR(
 		gl_FragColor = vec4(rgb, 1);
 	}
 );
-
 
 ClientWindow::ClientWindow(QWidget* parent)
 	: QOpenGLWidget(parent)
@@ -145,6 +143,7 @@ void ClientWindow::resizeGL(int width, int height)
 
 void ClientWindow::paintGL()
 {
+	mLock.lock();
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, mTextureIds[0]);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, v_width, v_height, 0, GL_RED, GL_UNSIGNED_BYTE, yuvPtr);
@@ -161,6 +160,7 @@ void ClientWindow::paintGL()
 	glUniform1i(mUfV, 2);
 	 
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+	mLock.unlock();
 }
 
 void ClientWindow::closeEvent(QCloseEvent* event)
@@ -228,6 +228,7 @@ void ClientWindow::mouseReleaseEvent(QMouseEvent* event)
 //signal
 int32_t ClientWindow::upYuvDate(uchar* data, int32_t width, int32_t height, int32_t size)
 {
+	mLock.lock();
 	if (v_width!=width || v_height != height || sizeof(yuvPtr)!=size) {
 		v_width = width;
 		v_height = height;
@@ -240,6 +241,7 @@ int32_t ClientWindow::upYuvDate(uchar* data, int32_t width, int32_t height, int3
 		update();
 	}	
 	//qDebug()<< __func__ <<" End";
+	mLock.unlock();
 	return 0;
 }
 
