@@ -3,7 +3,7 @@
 
 #define GET_GLSTR(x) #x
 
-static const char* vsrc = GET_GLSTR(
+static const char* yuv_vsrc = GET_GLSTR(
 	attribute vec4 vertexIn;
 	attribute vec2 textureIn;
 	varying vec2 textureOut;
@@ -13,7 +13,7 @@ static const char* vsrc = GET_GLSTR(
 		textureOut = textureIn;
 	}
 );
-static const char* fsrc = GET_GLSTR(
+static const char* yuv_fsrc = GET_GLSTR(
 	varying vec2 textureOut;
 	uniform sampler2D tex_y;
 	uniform sampler2D tex_u;
@@ -27,6 +27,25 @@ static const char* fsrc = GET_GLSTR(
 		yuv.z = texture2D(tex_v, textureOut).r - 0.5;
 		rgb = mat3(1, 1, 1, 0, -0.39465, 2.03211, 1.13983, -0.58060, 0) * yuv;
 		gl_FragColor = vec4(rgb, 1);
+	}
+);
+
+static const char* png_vsrc = GET_GLSTR(
+	attribute vec4 vPosition;
+	attribute vec2 vCoordinate;
+	uniform mat4 vMatrix;
+	varying vec2 aCoordinate;
+	void main() {
+		gl_Position = vMatrix * vPosition;
+		aCoordinate = vCoordinate;
+	}
+);
+
+static const char* png_fsrc = GET_GLSTR(
+	uniform sampler2D vTexture;
+	varying vec2 aCoordinate;
+	void main() {
+		gl_FragColor = texture2D(vTexture, aCoordinate);
 	}
 );
 
@@ -56,7 +75,6 @@ ClientWindow::~ClientWindow()
 {
 	qDebug("ClientWindow %s", __func__);
 	if (yuvPtr) free(yuvPtr);
-	if (mGLShaderProgram) mGLShaderProgram->release();
 	if (out) {
 		out->stop();
 		delete out;
@@ -73,7 +91,7 @@ void ClientWindow::initializeGL()
 {
 	qDebug("ClientWindow %s", __func__);
 	initializeOpenGLFunctions();
-	//glEnable(GL_DEPTH_TEST);  
+	glEnable(GL_DEPTH_TEST);  
 
 	//QMatrix4x4 mat;
 	//mat.setToIdentity();
@@ -82,40 +100,62 @@ void ClientWindow::initializeGL()
 	//QVector3D up(0, 1, 0);
 	//mat.lookAt(eye, cen, up);
 
-	static const GLfloat vertices[]{
-		//顶点坐标
-		-1.0f, -1.0f,
-		-1.0f, +1.0f,
-		+1.0f, +1.0f,
-		+1.0f, -1.0f,
-		//纹理坐标
-		+0.0f, +1.0f,
-		+0.0f, +0.0f,
-		+1.0f, +0.0f,
-		+1.0f, +1.0f,
+	const GLfloat vertices[]{
+		//顶点坐标3 纹理坐标2
+		-1.0f, -1.0f, +0.1f, +0.0f, +1.0f,
+		-1.0f, +1.0f, +0.1f, +0.0f, +0.0f,
+		+1.0f, +1.0f, +0.1f, +1.0f, +0.0f,
+		+1.0f, -1.0f, +0.1f, +1.0f, +1.0f,
+
+		-1.0f, -1.0f, +0.0f, +0.0f, +1.0f,
+		-1.0f, +0.0f, +0.0f, +0.0f, +0.0f,
+		+0.0f, +0.0f, +0.0f, +1.0f, +0.0f,
+		+0.0f, -1.0f, +0.0f, +1.0f, +1.0f,
+
 	};
+
 	mGLBuffer.create();
 	mGLBuffer.bind();
 	mGLBuffer.allocate(vertices, sizeof(vertices));
-	QOpenGLShader* vshader = new QOpenGLShader(QOpenGLShader::Vertex, this);
-	vshader->compileSourceCode(vsrc);
-	QOpenGLShader* fshader = new QOpenGLShader(QOpenGLShader::Fragment, this);
-	fshader->compileSourceCode(fsrc);
-	mGLShaderProgram = new QOpenGLShaderProgram(this);
-	mGLShaderProgram->addShader(vshader);
-	mGLShaderProgram->addShader(fshader);
-	mGLShaderProgram->bindAttributeLocation("vertexIn", 0);
-	mGLShaderProgram->bindAttributeLocation("textureIn", 1);
-	mGLShaderProgram->link();
-	mGLShaderProgram->bind();
-	mGLShaderProgram->enableAttributeArray(0);
-	mGLShaderProgram->enableAttributeArray(1);
-	mGLShaderProgram->setAttributeBuffer(0, GL_FLOAT, 0, 2, 2 * sizeof(GLfloat));
-	mGLShaderProgram->setAttributeBuffer(1, GL_FLOAT, 8 * sizeof(GLfloat), 2, 2 * sizeof(GLfloat));
+	QOpenGLShader* yuv_vshader = new QOpenGLShader(QOpenGLShader::Vertex, this);
+	yuv_vshader->compileSourceCode(yuv_vsrc);
+	QOpenGLShader* yuv_fshader = new QOpenGLShader(QOpenGLShader::Fragment, this);
+	yuv_fshader->compileSourceCode(yuv_fsrc);
+	mYuvShaderProgram = new QOpenGLShaderProgram(this);
+	mYuvShaderProgram->addShader(yuv_vshader);
+	mYuvShaderProgram->addShader(yuv_fshader);
+	mYuvShaderProgram->bindAttributeLocation("vertexIn", 0);
+	mYuvShaderProgram->enableAttributeArray(0);
+	mYuvShaderProgram->bindAttributeLocation("textureIn", 1);
+	mYuvShaderProgram->enableAttributeArray(1);
+	mYuvShaderProgram->link();
+	mYuvShaderProgram->bind();
+	mYuvShaderProgram->setAttributeBuffer(0, GL_FLOAT, 0, 3, 5 * sizeof(float)); 
+	mYuvShaderProgram->setAttributeBuffer(1, GL_FLOAT, 3 * sizeof(float), 2, 5 * sizeof(float)); 
 
-	mUfY = mGLShaderProgram->uniformLocation("tex_y");
-	mUfU = mGLShaderProgram->uniformLocation("tex_u");
-	mUfV = mGLShaderProgram->uniformLocation("tex_v");
+	mUfY = mYuvShaderProgram->uniformLocation("tex_y");
+	mUfU = mYuvShaderProgram->uniformLocation("tex_u");
+	mUfV = mYuvShaderProgram->uniformLocation("tex_v");
+	mYuvShaderProgram->release();
+
+	QOpenGLShader* png_vshader = new QOpenGLShader(QOpenGLShader::Vertex, this);
+	png_vshader->compileSourceCode(png_vsrc);
+	QOpenGLShader* png_fshader = new QOpenGLShader(QOpenGLShader::Fragment, this);
+	png_fshader->compileSourceCode(png_fsrc);
+	mPngShaderProgram = new QOpenGLShaderProgram(this);
+	mPngShaderProgram->addShader(png_vshader);
+	mPngShaderProgram->addShader(png_fshader);
+	mPngShaderProgram->bindAttributeLocation("vPosition", 0);
+	mPngShaderProgram->enableAttributeArray(0);
+	mPngShaderProgram->bindAttributeLocation("vCoordinate", 1);
+	mPngShaderProgram->enableAttributeArray(1);
+	mPngShaderProgram->link();
+	mPngShaderProgram->bind();
+	mPngShaderProgram->setAttributeBuffer(0, GL_FLOAT, 0, 3, 5 * sizeof(float));
+	mPngShaderProgram->setAttributeBuffer(1, GL_FLOAT, 3 * sizeof(float), 2, 5 * sizeof(float));
+	mPngShaderProgram->release();
+
+	mGLBuffer.release();
 
 	for (int i = 0; i < sizeof(mTextureIds) / sizeof(mTextureIds[0]); i++) {
 		mTextures[i] = new QOpenGLTexture(QOpenGLTexture::Target2D);
@@ -129,7 +169,11 @@ void ClientWindow::initializeGL()
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	}
 
-	mGLBuffer.release();
+	png_texture = new QOpenGLTexture(QImage(QString("D:\\temp\\katong\\001.png")).mirrored());
+	png_texture->setMinificationFilter(QOpenGLTexture::Nearest);
+	png_texture->setMagnificationFilter(QOpenGLTexture::Linear);
+	png_texture->setWrapMode(QOpenGLTexture::Repeat);
+
 	glClearColor(0.0f, 0.3f, 0.7f, 1.0f);
 }
 
@@ -144,36 +188,39 @@ void ClientWindow::resizeGL(int width, int height)
 void ClientWindow::paintGL()
 {
 	mLock.lock();
+	//glUseProgram(mYuvShaderProgram->programId());
+	mYuvShaderProgram->bind();
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, mTextureIds[0]);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, v_width, v_height, 0, GL_RED, GL_UNSIGNED_BYTE, yuvPtr);
 	glUniform1i(mUfY, 0);
-
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, mTextureIds[1]);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, v_width >> 1, v_height >> 1, 0, GL_RED, GL_UNSIGNED_BYTE, yuvPtr + v_width * v_height);
 	glUniform1i(mUfU, 1);
-
 	glActiveTexture(GL_TEXTURE2); 
 	glBindTexture(GL_TEXTURE_2D, mTextureIds[2]);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, v_width >> 1, v_height >> 1, 0, GL_RED, GL_UNSIGNED_BYTE, yuvPtr + v_width * v_height * 5 / 4);
 	glUniform1i(mUfV, 2);
-	 
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-	mLock.unlock();
-}
+	mYuvShaderProgram->release();
 
-void ClientWindow::closeEvent(QCloseEvent* event)
-{
-	//QThread::usleep(20000);
+	mPngShaderProgram->bind();
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, png_texture->textureId());
+	glUniform1i(mPngShaderProgram->uniformLocation("vTexture"),0);
+	glDrawArrays(GL_TRIANGLE_FAN, 4, 4);
+	mPngShaderProgram->release();
+
+	mLock.unlock();
 }
 
 void ClientWindow::mousePressEvent(QMouseEvent* event)
 {
 	//qDebug() << event << "----" << event->pos();
 	if (event->button() == Qt::LeftButton) {
-		lastX = event->pos().x() * v_width / mWidth;
-		lastY = event->pos().y() * v_height / mHeigh;
+		lastX = event->pos().x() * 1080 / mWidth;
+		lastY = event->pos().y() * 1920 / mHeigh;
 		leftDown[12] = lastX >> 8 & 0x000000FF;
 		leftDown[13] = lastX & 0x000000FF;
 		leftDown[16] = lastY >> 8 & 0x000000FF;
@@ -193,8 +240,8 @@ void ClientWindow::mouseMoveEvent(QMouseEvent* event)
 {
 	//qDebug() << event << "----" << event->pos();
 	if (event->buttons() == Qt::LeftButton) {
-		int32_t x = event->pos().x() * v_width / mWidth;
-		int32_t y = event->pos().y() * v_height / mHeigh;
+		int32_t x = event->pos().x() * 1080 / mWidth;
+		int32_t y = event->pos().y() * 1920 / mHeigh;
 		leftMove[12] = x >> 8 & 0x000000FF;
 		leftMove[13] = x & 0x000000FF;
 		leftMove[16] = y >> 8 & 0x000000FF;
@@ -211,8 +258,8 @@ void ClientWindow::mouseReleaseEvent(QMouseEvent* event)
 {
 	//qDebug() << event << "----" << event->pos();
 	if (event->button() == Qt::LeftButton) {
-		int32_t x = event->pos().x() * v_width / mWidth;
-		int32_t y = event->pos().y() * v_height / mHeigh;
+		int32_t x = event->pos().x() * 1080 / mWidth;
+		int32_t y = event->pos().y() * 1920 / mHeigh;
 		if (x < 0 || x > 1080 || y < 0 || y > 1920) {
 			x = lastX;
 			y = lastY;
@@ -223,6 +270,11 @@ void ClientWindow::mouseReleaseEvent(QMouseEvent* event)
 		leftUp[17] = y & 0x000000FF;
 		mController->sendCommand(leftUp, sizeof(leftUp));
 	}
+}
+
+void ClientWindow::closeEvent(QCloseEvent* event)
+{
+	//QThread::usleep(20000);
 }
 
 //signal

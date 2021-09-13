@@ -42,10 +42,14 @@ private:
 	Ui::ClientWindow ui;
 
 	QOpenGLBuffer mGLBuffer;
-	QOpenGLShaderProgram* mGLShaderProgram;
+	QOpenGLShaderProgram* mYuvShaderProgram;
 	GLuint mUfY, mUfU, mUfV;
 	QOpenGLTexture* mTextures[3];
+
+	QOpenGLShaderProgram* mPngShaderProgram;
 	GLuint mTextureIds[3];
+
+	QOpenGLTexture* png_texture;
 
 	uchar* yuvPtr = nullptr;
 	volatile int32_t v_width;
