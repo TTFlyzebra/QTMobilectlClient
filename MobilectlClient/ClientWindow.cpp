@@ -108,9 +108,9 @@ void ClientWindow::initializeGL()
 		+1.0f, -1.0f, +0.1f, +1.0f, +1.0f,
 
 		-1.0f, -1.0f, +0.0f, +0.0f, +0.0f,
-		-1.0f, +0.0f, +0.0f, +0.0f, +0.7f,
-		+0.0f, +0.0f, +0.0f, +0.5f, +0.7f,
-		+0.0f, -1.0f, +0.0f, +0.5f, +0.0f,
+		-1.0f, +0.0f, +0.0f, +0.0f, +1.0f,
+		+0.0f, +0.0f, +0.0f, +1.0f, +1.0f,
+		+0.0f, -1.0f, +0.0f, +1.0f, +0.0f,
 
 	};
 
@@ -160,12 +160,6 @@ void ClientWindow::initializeGL()
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	}
-
-	png_texture = new QOpenGLTexture(QImage("D:\\temp\\katong\\001.png").mirrored());
-	png_texture->setMinificationFilter(QOpenGLTexture::Nearest);
-	png_texture->setMagnificationFilter(QOpenGLTexture::Linear);
-	png_texture->setWrapMode(QOpenGLTexture::Repeat);
-
 	glClearColor(0.0f, 0.3f, 0.7f, 1.0f);
 }
 
@@ -199,19 +193,13 @@ void ClientWindow::paintGL()
 	mYuvShaderProgram->release();
 
 	char temp[200];
-	if (i > 999) i = 1;
-	if (i < 10) {
-		sprintf(temp,"D:\\temp\\Screenshots\\test001\\image-00%d.jpeg",i);
-	}else if (i < 100) {
-		sprintf(temp, "D:\\temp\\Screenshots\\test001\\image-0%d.jpeg", i);
-	}else {
-		sprintf(temp, "D:\\temp\\Screenshots\\test001\\image-%d.jpeg", i);
-	}
+	if (i > 5) i = 1;
+	sprintf(temp,"D:\\VcPro\\MobilectlClient\\image\\00%d.png",i);
+	i++;
 	png_texture = new QOpenGLTexture(QImage(temp).mirrored());
 	png_texture->setMinificationFilter(QOpenGLTexture::Nearest);
 	png_texture->setMagnificationFilter(QOpenGLTexture::Linear);
 	png_texture->setWrapMode(QOpenGLTexture::Repeat);
-	i++;
 
 	mPngShaderProgram->bind();
 	glActiveTexture(GL_TEXTURE0);
