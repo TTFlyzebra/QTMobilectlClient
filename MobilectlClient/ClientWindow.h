@@ -43,7 +43,6 @@ private:
 
 	QOpenGLBuffer mGLBuffer;
 	QOpenGLShaderProgram* mYuvShaderProgram;
-	GLuint mUfY, mUfU, mUfV;
 	QOpenGLTexture* mTextures[3];
 
 	QOpenGLShaderProgram* mPngShaderProgram;
@@ -88,6 +87,9 @@ private:
 	uchar key_home[14] = {
 		0x00,0x01,0x00,0x00,0x00,0x03,0x00,0x00,
 		0x00,0x00,0x00,0x00,0x00,0x00 };
+
 	int32_t lastX, lastY;
+
+	QMatrix4x4 m_projectMat;
 };
 

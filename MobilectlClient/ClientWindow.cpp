@@ -31,21 +31,20 @@ static const char* yuv_fsrc = GET_GLSTR(
 );
 
 static const char* png_vsrc = GET_GLSTR(
-	attribute vec4 vPosition;
-	attribute vec2 vCoordinate;
-	uniform mat4 vMatrix;
-	varying vec2 aCoordinate;
+	attribute vec4 vertex;
+	attribute vec2 textCode;
+	varying vec2 texcv2;
 	void main() {
-		gl_Position = vMatrix * vPosition;
-		aCoordinate = vCoordinate;
+		gl_Position = vertex;
+		texcv2 = textCode;
 	}
 );
 
 static const char* png_fsrc = GET_GLSTR(
-	uniform sampler2D vTexture;
-	varying vec2 aCoordinate;
+	varying vec2 texcv2;
+	uniform sampler2D vTexture;	
 	void main() {
-		gl_FragColor = texture2D(vTexture, aCoordinate);
+		gl_FragColor = texture2D(vTexture, texcv2);
 	}
 );
 
@@ -75,11 +74,17 @@ ClientWindow::~ClientWindow()
 {
 	qDebug("ClientWindow %s", __func__);
 	if (yuvPtr) free(yuvPtr);
+
 	if (out) {
 		out->stop();
 		delete out;
 	}
-	io = nullptr;
+
+	delete mYuvShaderProgram;
+	delete mPngShaderProgram;
+	for (int i = 0; i < sizeof(mTextureIds) / sizeof(mTextureIds[0]); i++) {
+		delete mTextures[i];
+	}	
 }
 
 void ClientWindow::setController(Controller* controller)
@@ -91,14 +96,9 @@ void ClientWindow::initializeGL()
 {
 	qDebug("ClientWindow %s", __func__);
 	initializeOpenGLFunctions();
+	glEnable(GL_BLEND);
 	glEnable(GL_DEPTH_TEST);  
-
-	//QMatrix4x4 mat;
-	//mat.setToIdentity();
-	//QVector3D eye(10, 10, 10);
-	//QVector3D cen(0, 0, 0);
-	//QVector3D up(0, 1, 0);
-	//mat.lookAt(eye, cen, up);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	const GLfloat vertices[]{
 		//顶点坐标3 纹理坐标2
@@ -107,10 +107,10 @@ void ClientWindow::initializeGL()
 		+1.0f, +1.0f, +0.1f, +1.0f, +0.0f,
 		+1.0f, -1.0f, +0.1f, +1.0f, +1.0f,
 
-		-1.0f, -1.0f, +0.0f, +0.0f, +1.0f,
-		-1.0f, +0.0f, +0.0f, +0.0f, +0.0f,
-		+0.0f, +0.0f, +0.0f, +1.0f, +0.0f,
-		+0.0f, -1.0f, +0.0f, +1.0f, +1.0f,
+		-1.0f, -1.0f, +0.0f, +0.0f, +0.0f,
+		-1.0f, +0.0f, +0.0f, +0.0f, +0.7f,
+		+0.0f, +0.0f, +0.0f, +0.5f, +0.7f,
+		+0.0f, -1.0f, +0.0f, +0.5f, +0.0f,
 
 	};
 
@@ -124,19 +124,13 @@ void ClientWindow::initializeGL()
 	mYuvShaderProgram = new QOpenGLShaderProgram(this);
 	mYuvShaderProgram->addShader(yuv_vshader);
 	mYuvShaderProgram->addShader(yuv_fshader);
-	mYuvShaderProgram->bindAttributeLocation("vertexIn", 0);
+	mYuvShaderProgram->bindAttributeLocation("vertexIn",0);
+	mYuvShaderProgram->setAttributeBuffer(0, GL_FLOAT, 0, 3, 5 * sizeof(float));
 	mYuvShaderProgram->enableAttributeArray(0);
-	mYuvShaderProgram->bindAttributeLocation("textureIn", 1);
+	mYuvShaderProgram->bindAttributeLocation("textureIn",1);
+	mYuvShaderProgram->setAttributeBuffer(1, GL_FLOAT, 3 * sizeof(float), 2, 5 * sizeof(float));
 	mYuvShaderProgram->enableAttributeArray(1);
 	mYuvShaderProgram->link();
-	mYuvShaderProgram->bind();
-	mYuvShaderProgram->setAttributeBuffer(0, GL_FLOAT, 0, 3, 5 * sizeof(float)); 
-	mYuvShaderProgram->setAttributeBuffer(1, GL_FLOAT, 3 * sizeof(float), 2, 5 * sizeof(float)); 
-
-	mUfY = mYuvShaderProgram->uniformLocation("tex_y");
-	mUfU = mYuvShaderProgram->uniformLocation("tex_u");
-	mUfV = mYuvShaderProgram->uniformLocation("tex_v");
-	mYuvShaderProgram->release();
 
 	QOpenGLShader* png_vshader = new QOpenGLShader(QOpenGLShader::Vertex, this);
 	png_vshader->compileSourceCode(png_vsrc);
@@ -145,15 +139,13 @@ void ClientWindow::initializeGL()
 	mPngShaderProgram = new QOpenGLShaderProgram(this);
 	mPngShaderProgram->addShader(png_vshader);
 	mPngShaderProgram->addShader(png_fshader);
-	mPngShaderProgram->bindAttributeLocation("vPosition", 0);
-	mPngShaderProgram->enableAttributeArray(0);
-	mPngShaderProgram->bindAttributeLocation("vCoordinate", 1);
-	mPngShaderProgram->enableAttributeArray(1);
+	mPngShaderProgram->bindAttributeLocation("vertex", 2);
+	mPngShaderProgram->setAttributeBuffer(2, GL_FLOAT, 0, 3, 5 * sizeof(float));
+	mPngShaderProgram->enableAttributeArray(2);
+	mPngShaderProgram->bindAttributeLocation("textCode",3);
+	mPngShaderProgram->setAttributeBuffer(3, GL_FLOAT, 3 * sizeof(float), 2, 5 * sizeof(float));
+	mPngShaderProgram->enableAttributeArray(3);
 	mPngShaderProgram->link();
-	mPngShaderProgram->bind();
-	mPngShaderProgram->setAttributeBuffer(0, GL_FLOAT, 0, 3, 5 * sizeof(float));
-	mPngShaderProgram->setAttributeBuffer(1, GL_FLOAT, 3 * sizeof(float), 2, 5 * sizeof(float));
-	mPngShaderProgram->release();
 
 	mGLBuffer.release();
 
@@ -169,7 +161,7 @@ void ClientWindow::initializeGL()
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	}
 
-	png_texture = new QOpenGLTexture(QImage(QString("D:\\temp\\katong\\001.png")).mirrored());
+	png_texture = new QOpenGLTexture(QImage("D:\\temp\\katong\\001.png").mirrored());
 	png_texture->setMinificationFilter(QOpenGLTexture::Nearest);
 	png_texture->setMagnificationFilter(QOpenGLTexture::Linear);
 	png_texture->setWrapMode(QOpenGLTexture::Repeat);
@@ -185,32 +177,50 @@ void ClientWindow::resizeGL(int width, int height)
 	mHeigh = height;
 }
 
+int i = 1;
+
 void ClientWindow::paintGL()
 {
 	mLock.lock();
-	//glUseProgram(mYuvShaderProgram->programId());
 	mYuvShaderProgram->bind();
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, mTextureIds[0]);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, v_width, v_height, 0, GL_RED, GL_UNSIGNED_BYTE, yuvPtr);
-	glUniform1i(mUfY, 0);
+	glUniform1i(mYuvShaderProgram->uniformLocation("tex_y"), 0);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, mTextureIds[1]);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, v_width >> 1, v_height >> 1, 0, GL_RED, GL_UNSIGNED_BYTE, yuvPtr + v_width * v_height);
-	glUniform1i(mUfU, 1);
+	glUniform1i(mYuvShaderProgram->uniformLocation("tex_u"), 1);
 	glActiveTexture(GL_TEXTURE2); 
 	glBindTexture(GL_TEXTURE_2D, mTextureIds[2]);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, v_width >> 1, v_height >> 1, 0, GL_RED, GL_UNSIGNED_BYTE, yuvPtr + v_width * v_height * 5 / 4);
-	glUniform1i(mUfV, 2);
+	glUniform1i(mYuvShaderProgram->uniformLocation("tex_v"), 2);
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 	mYuvShaderProgram->release();
+
+	char temp[200];
+	if (i > 999) i = 1;
+	if (i < 10) {
+		sprintf(temp,"D:\\temp\\Screenshots\\test001\\image-00%d.jpeg",i);
+	}else if (i < 100) {
+		sprintf(temp, "D:\\temp\\Screenshots\\test001\\image-0%d.jpeg", i);
+	}else {
+		sprintf(temp, "D:\\temp\\Screenshots\\test001\\image-%d.jpeg", i);
+	}
+	png_texture = new QOpenGLTexture(QImage(temp).mirrored());
+	png_texture->setMinificationFilter(QOpenGLTexture::Nearest);
+	png_texture->setMagnificationFilter(QOpenGLTexture::Linear);
+	png_texture->setWrapMode(QOpenGLTexture::Repeat);
+	i++;
 
 	mPngShaderProgram->bind();
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, png_texture->textureId());
 	glUniform1i(mPngShaderProgram->uniformLocation("vTexture"),0);
 	glDrawArrays(GL_TRIANGLE_FAN, 4, 4);
-	mPngShaderProgram->release();
+	png_texture->release();
+	delete png_texture;
+	mPngShaderProgram->release();	
 
 	mLock.unlock();
 }
