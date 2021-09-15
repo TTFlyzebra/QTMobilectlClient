@@ -25,7 +25,7 @@ private:
 	QTcpSocket* mTcpSocket;
 	volatile bool is_stop;
 	std::vector<uchar> sendBuf;
-	QMutex mLock;
+	QMutex mYuvDataLock;
 	QWaitCondition mTask;
 };
 

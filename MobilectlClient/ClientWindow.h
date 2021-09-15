@@ -26,8 +26,6 @@ public slots:
 	int32_t upYuvDate(uchar* data, int32_t width, int32_t height, int32_t size);
 public slots:
 	int32_t upPcmDate(uchar* data, int32_t size);
-private slots:
-	void timerUpdate();
 
 protected:
 	virtual void initializeGL();
@@ -47,9 +45,6 @@ private:
 	QOpenGLShaderProgram* mYuvShaderProgram;
 	QOpenGLTexture* mTextures[3];
 
-	//QOpenGLShaderProgram* mPngShaderProgram;	
-	//QOpenGLTexture* png_texture;
-
 	uchar* yuvPtr = nullptr;
 	volatile int32_t v_width;
 	volatile int32_t v_height;
@@ -62,8 +57,9 @@ private:
 	volatile int32_t mWidth;
 	volatile int32_t mHeigh;
 
-	QMutex mLock;
+	QMutex mYuvDataLock;
 
+	int32_t lastX, lastY;
 	uchar leftDown[28] = {
 		0x02,0x00,0xff,0xff,0xff,0xff,0xff,0xff,
 		0xff,0xff,0x00,0x00,0x02,0x24,0x00,0x00,
@@ -87,9 +83,5 @@ private:
 	uchar key_home[14] = {
 		0x00,0x01,0x00,0x00,0x00,0x03,0x00,0x00,
 		0x00,0x00,0x00,0x00,0x00,0x00 };
-
-	int32_t lastX, lastY;
-
-	//QTimer* timer;
 };
 

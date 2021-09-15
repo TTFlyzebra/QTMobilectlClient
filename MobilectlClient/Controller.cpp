@@ -19,13 +19,13 @@ void Controller::connect(char* ip_address)
 
 void Controller::sendCommand(uchar* command, int32_t size)
 {
-	mLock.lock();
+	mYuvDataLock.lock();
 	if (sendBuf.size() > 1024) {
 		sendBuf.clear();
 	}
 	sendBuf.insert(sendBuf.end(), command, command + size);
 	mTask.wakeAll();
-	mLock.unlock();
+	mYuvDataLock.unlock();
 }
 
 void Controller::run()
@@ -42,9 +42,9 @@ void Controller::run()
 		}
 		QObject::connect(mTcpSocket, SIGNAL(readyRead()), this, SLOT(recvData()));
 		while (!is_stop) {
-			mLock.lock();
+			mYuvDataLock.lock();
 			if (sendBuf.empty()) {
-				mTask.wait(&mLock);
+				mTask.wait(&mYuvDataLock);
 			}
 			if (!sendBuf.empty()) {
 				const char* send = (const char*)&sendBuf[0];
@@ -54,7 +54,7 @@ void Controller::run()
 				sendBuf.clear();
 				if (sendLen < 0) break;
 			}
-			mLock.unlock();
+			mYuvDataLock.unlock();
 		}
 	}
 }
@@ -71,7 +71,7 @@ void Controller::recvData()
 void Controller::disconnect()
 {
 	is_stop = true;
-	mLock.lock();
+	mYuvDataLock.lock();
 	mTask.wakeAll();
-	mLock.unlock();
+	mYuvDataLock.unlock();
 }
