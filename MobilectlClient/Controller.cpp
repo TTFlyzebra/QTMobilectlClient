@@ -49,9 +49,10 @@ void Controller::run()
 			if (!sendBuf.empty()) {
 				const char* send = (const char*)&sendBuf[0];
 				int32_t sendLen = mTcpSocket->write(send, sendBuf.size());
-				mTcpSocket->flush();
 				//qDebug("Controller send size[%d], errno[%d]", sendLen, errno);
+				mTcpSocket->flush();				
 				sendBuf.clear();
+				if (sendLen < 0) break;
 			}
 			mLock.unlock();
 		}

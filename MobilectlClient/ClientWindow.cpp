@@ -29,24 +29,24 @@ static const char* yuv_fsrc = GET_GLSTR(
 		gl_FragColor = vec4(rgb, 1);
 	}
 );
-
-static const char* png_vsrc = GET_GLSTR(
-	attribute vec4 vertex;
-	attribute vec2 textCode;
-	varying vec2 texcv2;
-	void main() {
-		gl_Position = vertex;
-		texcv2 = textCode;
-	}
-);
-
-static const char* png_fsrc = GET_GLSTR(
-	varying vec2 texcv2;
-	uniform sampler2D vTexture;	
-	void main() {
-		gl_FragColor = texture2D(vTexture, texcv2);
-	}
-);
+//
+//static const char* png_vsrc = GET_GLSTR(
+//	attribute vec4 vertex;
+//	attribute vec2 textCode;
+//	varying vec2 texcv2;
+//	void main() {
+//		gl_Position = vertex;
+//		texcv2 = textCode;
+//	}
+//);
+//
+//static const char* png_fsrc = GET_GLSTR(
+//	varying vec2 texcv2;
+//	uniform sampler2D vTexture;	
+//	void main() {
+//		gl_FragColor = texture2D(vTexture, texcv2);
+//	}
+//);
 
 ClientWindow::ClientWindow(QWidget* parent)
 	: QOpenGLWidget(parent)
@@ -68,6 +68,11 @@ ClientWindow::ClientWindow(QWidget* parent)
 	fmt.setSampleType(QAudioFormat::UnSignedInt);
 	out = new QAudioOutput(fmt);
 	io = out->start();
+
+	//timer = new QTimer(this);
+	////关联定时器溢出信号和相应的槽函数
+	//connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
+	//timer->start(1000/24);
 }
 
 ClientWindow::~ClientWindow()
@@ -81,10 +86,13 @@ ClientWindow::~ClientWindow()
 	}
 
 	delete mYuvShaderProgram;
-	delete mPngShaderProgram;
-	for (int i = 0; i < sizeof(mTextureIds) / sizeof(mTextureIds[0]); i++) {
+	//delete mPngShaderProgram;
+	for (int i = 0; i < sizeof(mTextures) / sizeof(mTextures[0]); i++) {
 		delete mTextures[i];
 	}	
+
+	//timer->stop();
+	//delete timer;
 }
 
 void ClientWindow::setController(Controller* controller)
@@ -107,10 +115,15 @@ void ClientWindow::initializeGL()
 		+1.0f, +1.0f, +0.1f, +1.0f, +0.0f,
 		+1.0f, -1.0f, +0.1f, +1.0f, +1.0f,
 
-		-1.0f, -1.0f, +0.0f, +0.0f, +0.0f,
-		-1.0f, +0.0f, +0.0f, +0.0f, +1.0f,
-		+0.0f, +0.0f, +0.0f, +1.0f, +1.0f,
-		+0.0f, -1.0f, +0.0f, +1.0f, +0.0f,
+		//-0.0f, -1.0f, +0.0f, +0.0f, +0.0f,
+		//-0.0f, -0.5f, +0.0f, +0.0f, +1.0f,
+		//+1.0f, -0.5f, +0.0f, +1.0f, +1.0f,
+		//+1.0f, -1.0f, +0.0f, +1.0f, +0.0f,
+		//
+		//-1.0f, -0.0f, +0.0f, +0.0f, +0.0f,
+		//-1.0f, +1.0f, +0.0f, +0.0f, +1.0f,
+		//+1.0f, +1.0f, +0.0f, +1.0f, +1.0f,
+		//+1.0f, -0.0f, +0.0f, +1.0f, +0.0f,
 
 	};
 
@@ -131,30 +144,30 @@ void ClientWindow::initializeGL()
 	mYuvShaderProgram->setAttributeBuffer(1, GL_FLOAT, 3 * sizeof(float), 2, 5 * sizeof(float));
 	mYuvShaderProgram->enableAttributeArray(1);
 	mYuvShaderProgram->link();
+	mYuvShaderProgram->bind();
 
-	QOpenGLShader* png_vshader = new QOpenGLShader(QOpenGLShader::Vertex, this);
-	png_vshader->compileSourceCode(png_vsrc);
-	QOpenGLShader* png_fshader = new QOpenGLShader(QOpenGLShader::Fragment, this);
-	png_fshader->compileSourceCode(png_fsrc);
-	mPngShaderProgram = new QOpenGLShaderProgram(this);
-	mPngShaderProgram->addShader(png_vshader);
-	mPngShaderProgram->addShader(png_fshader);
-	mPngShaderProgram->bindAttributeLocation("vertex", 2);
-	mPngShaderProgram->setAttributeBuffer(2, GL_FLOAT, 0, 3, 5 * sizeof(float));
-	mPngShaderProgram->enableAttributeArray(2);
-	mPngShaderProgram->bindAttributeLocation("textCode",3);
-	mPngShaderProgram->setAttributeBuffer(3, GL_FLOAT, 3 * sizeof(float), 2, 5 * sizeof(float));
-	mPngShaderProgram->enableAttributeArray(3);
-	mPngShaderProgram->link();
+	//QOpenGLShader* png_vshader = new QOpenGLShader(QOpenGLShader::Vertex, this);
+	//png_vshader->compileSourceCode(png_vsrc);
+	//QOpenGLShader* png_fshader = new QOpenGLShader(QOpenGLShader::Fragment, this);
+	//png_fshader->compileSourceCode(png_fsrc);
+	//mPngShaderProgram = new QOpenGLShaderProgram(this);
+	//mPngShaderProgram->addShader(png_vshader);
+	//mPngShaderProgram->addShader(png_fshader);
+	//mPngShaderProgram->bindAttributeLocation("vertex", 2);
+	//mPngShaderProgram->setAttributeBuffer(2, GL_FLOAT, 0, 3, 5 * sizeof(float));
+	//mPngShaderProgram->enableAttributeArray(2);
+	//mPngShaderProgram->bindAttributeLocation("textCode",3);
+	//mPngShaderProgram->setAttributeBuffer(3, GL_FLOAT, 3 * sizeof(float), 2, 5 * sizeof(float));
+	//mPngShaderProgram->enableAttributeArray(3);
+	//mPngShaderProgram->link();
 
 	mGLBuffer.release();
 
-	for (int i = 0; i < sizeof(mTextureIds) / sizeof(mTextureIds[0]); i++) {
+	for (int i = 0; i < sizeof(mTextures) / sizeof(mTextures[0]); i++) {
 		mTextures[i] = new QOpenGLTexture(QOpenGLTexture::Target2D);
 		mTextures[i]->create();
-		mTextureIds[i] = mTextures[i]->textureId();
 		mTextures[i]->release();
-		glBindTexture(GL_TEXTURE_2D, mTextureIds[i]);
+		glBindTexture(GL_TEXTURE_2D, mTextures[i]->textureId());
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -176,39 +189,45 @@ int i = 1;
 void ClientWindow::paintGL()
 {
 	mLock.lock();
-	mYuvShaderProgram->bind();
+	//mYuvShaderProgram->bind();
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, mTextureIds[0]);
+	glBindTexture(GL_TEXTURE_2D, mTextures[0]->textureId());
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, v_width, v_height, 0, GL_RED, GL_UNSIGNED_BYTE, yuvPtr);
 	glUniform1i(mYuvShaderProgram->uniformLocation("tex_y"), 0);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, mTextureIds[1]);
+	glBindTexture(GL_TEXTURE_2D, mTextures[1]->textureId());
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, v_width >> 1, v_height >> 1, 0, GL_RED, GL_UNSIGNED_BYTE, yuvPtr + v_width * v_height);
 	glUniform1i(mYuvShaderProgram->uniformLocation("tex_u"), 1);
 	glActiveTexture(GL_TEXTURE2); 
-	glBindTexture(GL_TEXTURE_2D, mTextureIds[2]);
+	glBindTexture(GL_TEXTURE_2D, mTextures[2]->textureId());
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, v_width >> 1, v_height >> 1, 0, GL_RED, GL_UNSIGNED_BYTE, yuvPtr + v_width * v_height * 5 / 4);
 	glUniform1i(mYuvShaderProgram->uniformLocation("tex_v"), 2);
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-	mYuvShaderProgram->release();
+	//mYuvShaderProgram->release();
 
-	char temp[200];
-	if (i > 5) i = 1;
-	sprintf(temp,"D:\\VcPro\\MobilectlClient\\image\\00%d.png",i);
-	i++;
-	png_texture = new QOpenGLTexture(QImage(temp).mirrored());
-	png_texture->setMinificationFilter(QOpenGLTexture::Nearest);
-	png_texture->setMagnificationFilter(QOpenGLTexture::Linear);
-	png_texture->setWrapMode(QOpenGLTexture::Repeat);
-
-	mPngShaderProgram->bind();
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, png_texture->textureId());
-	glUniform1i(mPngShaderProgram->uniformLocation("vTexture"),0);
-	glDrawArrays(GL_TRIANGLE_FAN, 4, 4);
-	png_texture->release();
-	delete png_texture;
-	mPngShaderProgram->release();	
+	//char temp[200];
+	//if (i > 240) i = 0;
+	//if (i < 10) {
+	//	sprintf(temp, "D:\\VcPro\\MobilectlClient\\image\\magic3\\mtn_03_00%d.png", i);
+	//}else if(i<100){
+	//	sprintf(temp, "D:\\VcPro\\MobilectlClient\\image\\magic3\\mtn_03_0%d.png", i);
+	//}else {
+	//	sprintf(temp, "D:\\VcPro\\MobilectlClient\\image\\magic3\\mtn_03_%d.png", i);
+	//}
+	//i++;
+	//png_texture = new QOpenGLTexture(QImage(temp).mirrored());
+	//png_texture->setMinificationFilter(QOpenGLTexture::Nearest);
+	//png_texture->setMagnificationFilter(QOpenGLTexture::Linear);
+	//png_texture->setWrapMode(QOpenGLTexture::Repeat);
+	//mPngShaderProgram->bind();
+	//glActiveTexture(GL_TEXTURE0);
+	//glBindTexture(GL_TEXTURE_2D, png_texture->textureId());
+	//glUniform1i(mPngShaderProgram->uniformLocation("vTexture"),0);
+	//glDrawArrays(GL_TRIANGLE_FAN, 4, 4);
+	//glDrawArrays(GL_TRIANGLE_FAN, 8, 4);
+	//png_texture->release();
+	//delete png_texture;
+	//mPngShaderProgram->release();	
 
 	mLock.unlock();
 }
@@ -286,12 +305,10 @@ int32_t ClientWindow::upYuvDate(uchar* data, int32_t width, int32_t height, int3
 		yuvPtr = (uchar*)malloc(size * sizeof(uchar));
 	}
 	//qDebug(__func__);
-	if (yuvPtr) {
-		memcpy(yuvPtr, data, size);
-		update();
-	}	
+	if (yuvPtr) memcpy(yuvPtr, data, size);
 	//qDebug()<< __func__ <<" End";
 	mLock.unlock();
+	if (yuvPtr) update();
 	return 0;
 }
 
@@ -302,5 +319,12 @@ int32_t ClientWindow::upPcmDate(uchar* data, int32_t size)
 	if (io) io->write((const char*)data, size);
 	//qDebug("Write pcmData End");
 	return 0;
+}
+
+//signal
+void ClientWindow::timerUpdate()
+{
+	//qDebug("ClientWindow %s", __func__);
+	update();
 }
 
