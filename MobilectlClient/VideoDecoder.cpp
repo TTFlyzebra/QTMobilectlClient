@@ -221,7 +221,7 @@ void VideoDecoder::run()
                         //qDebug("yuv_signal size[%d] Start", size);
                         //if(!is_stop) emit yuv_signal(video_buf, v_frame->width, v_frame->height, size);
                         if (!is_stop) mWindow->upYuvDate(video_buf, v_frame->width, v_frame->height, size);
-                        //qDebug("yuv_signal size[%d] End", size);
+                        //qDebug("yuv_signal size[%d] %s", size, mVideo_url);
                         free(video_buf);
                     }
                 }

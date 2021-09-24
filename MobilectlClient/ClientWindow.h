@@ -21,7 +21,10 @@ public:
 	ClientWindow(QWidget* parent = Q_NULLPTR);
 	~ClientWindow();
 	void setController(Controller* ctl);
-
+signals:
+	void refreshUI_signal();
+public slots:
+	void refreshUI_handle();
 public slots:
 	int32_t upYuvDate(uchar* data, int32_t width, int32_t height, int32_t size);
 public slots:

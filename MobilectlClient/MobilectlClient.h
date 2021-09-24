@@ -15,6 +15,6 @@ public:
 private:
     Ui::MobilectlClientClass ui;
 
-    Controller *mCtrl;
-    VideoDecoder *mPlay;
+    Controller *mCtrl[2];
+    VideoDecoder *mPlay[2];
 };

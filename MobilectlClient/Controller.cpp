@@ -63,7 +63,7 @@ void Controller::recvData()
 	char recvMsg[1024] = { 0 };
 	int32_t recvLen = mTcpSocket->read(recvMsg, 1024);
 	qDebug("Controller recv size[%d] errno[%d]", recvLen, errno);
-	if (recvLen == -1){
+	if (recvLen <=0){
 		//TODO::
 	}
 }

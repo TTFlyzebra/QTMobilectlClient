@@ -37,7 +37,10 @@ ClientWindow::ClientWindow(QWidget* parent)
 	, mWidth(450)
 	, mHeigh(800)
 {
-	qDebug() << __func__;
+	qDebug("%s", __func__);
+
+	QObject::connect(this, SIGNAL(refreshUI_signal()), this, SLOT(refreshUI_handle()));
+
 	ui.setupUi(this);
 
 	yuvPtr = (uchar*)malloc((v_width * v_height * 3 / 2) * sizeof(uchar));
@@ -54,7 +57,8 @@ ClientWindow::ClientWindow(QWidget* parent)
 
 ClientWindow::~ClientWindow()
 {
-	qDebug("ClientWindow %s", __func__);
+	qDebug("%s", __func__);
+	makeCurrent();
 	if (yuvPtr) free(yuvPtr);
 
 	if (out) {
@@ -62,10 +66,13 @@ ClientWindow::~ClientWindow()
 		delete out;
 	}
 
-	delete mYuvShaderProgram;
 	for (int i = 0; i < sizeof(mTextures) / sizeof(mTextures[0]); i++) {
+		mTextures[i]->destroy();
 		delete mTextures[i];
-	}	
+	}
+
+	delete mYuvShaderProgram;
+		
 }
 
 void ClientWindow::setController(Controller* controller)
@@ -149,6 +156,11 @@ void ClientWindow::paintGL()
 	mYuvDataLock.unlock();
 }
 
+void ClientWindow::refreshUI_handle() {
+	//qDebug(__func__);
+	update();
+}
+
 void ClientWindow::mousePressEvent(QMouseEvent* event)
 {
 	//qDebug() << event << "----" << event->pos();
@@ -226,7 +238,7 @@ int32_t ClientWindow::upYuvDate(uchar* data, int32_t width, int32_t height, int3
 	if (yuvPtr) memcpy(yuvPtr, data, size);
 	//qDebug()<< __func__ <<" End";
 	mYuvDataLock.unlock();
-	if (yuvPtr) update();
+	if (yuvPtr) emit refreshUI_signal();
 	return 0;
 }
 
