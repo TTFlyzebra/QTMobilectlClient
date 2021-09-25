@@ -234,6 +234,7 @@ int32_t ClientWindow::upYuvDate(uchar* data, int32_t width, int32_t height, int3
 		free(yuvPtr);
 		yuvPtr = (uchar*)malloc(size * sizeof(uchar));
 	}
+	//qDebug("%s, width=%d,heith=%d",__func__, width, height);
 	//qDebug(__func__);
 	if (yuvPtr) memcpy(yuvPtr, data, size);
 	//qDebug()<< __func__ <<" End";

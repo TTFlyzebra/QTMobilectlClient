@@ -12,6 +12,17 @@ public:
     MobilectlClient(QWidget *parent = Q_NULLPTR);
     ~MobilectlClient();
 
+public slots:
+    void action1();
+public slots:
+    void action2();
+public slots:
+    void action3();
+public slots:
+    void action4();
+public slots:
+    void action5();
+
 private:
     Ui::MobilectlClientClass ui;
 

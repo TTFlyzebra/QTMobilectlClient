@@ -28,6 +28,7 @@ void VideoDecoder::setClientWindow(ClientWindow* window)
 
 void VideoDecoder::play(char* ip_address)
 {
+    is_stop = false;
     sprintf(mVideo_url,"rtsp://%s:8554/screen", ip_address);
     start();
 }
@@ -56,9 +57,9 @@ void VideoDecoder::run()
         pFormatCtx->interrupt_callback.opaque = (VideoDecoder*)this;
 
         AVDictionary* avdic = NULL;
-        av_dict_set(&avdic, "stimeout", "3000000", 0);//设置超时3秒
+        av_dict_set(&avdic, "stimeout", "5000000", 0);//设置超时3秒
         av_dict_set(&avdic, "rtsp_transport", "tcp", 0);
-        av_dict_set(&avdic, "probesize", "100*1024", 0);
+        av_dict_set(&avdic, "probesize", "1024*1024", 0);
         av_dict_set(&avdic, "max_analyze_duration", "5 * AV_TIME_BASE", 0);
         qDebug("open file %s", mVideo_url);
         int ret = avformat_open_input(&pFormatCtx, mVideo_url, nullptr, &avdic);

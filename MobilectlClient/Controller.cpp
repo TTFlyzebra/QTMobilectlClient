@@ -12,8 +12,8 @@ Controller::~Controller()
 
 void Controller::connect(char* ip_address)
 {
-	sprintf(mIpstr, "%s", ip_address);
 	is_stop = false;
+	sprintf(mIpstr, "%s", ip_address);
 	start();
 }
 
